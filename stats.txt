@@ -106,3 +106,7 @@ s12, 546/20, 0, 0.001   success: 0 / 300  ,  0 %  (avg. err: 1), FANN
 20, 1728/300, 0, 0.001   success: 136 / 300  ,  45 %  (avg. err: 0.7), FANN
 20, 1728/30, 0, 0.001   success: 141 / 300  ,  47 %  (avg. err: 0.7), FANN
 20, 1728/30, 0, 0.001   success: 95 / 300  ,  32 %  (avg. err: 1), FANN
+20, 1728/100, 0, 0.001   success: 112 / 300  ,  37 %  (avg. err: 0.9), FANN
+20, 1728/100, 0, 0.001   success: 110 / 300  ,  37 %  (avg. err: 0.9), FANN
+
+# now linear transition from/to left-center-right

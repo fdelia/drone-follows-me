@@ -3,7 +3,7 @@ const MARGIN_DIVIDER = 0; // auch in follow_hand.js anpassen!
 const SECTOR_WIDTH = 32;
 
 const INPUT_LAYER = 1728;
-const HIDDEN_LAYER = 30;
+const HIDDEN_LAYER = 50;
 // const MAX_ITERATIONS = 0; // should go up to 10k-100k, maybe with learning rate 0.1
 const DESIRED_ERROR = 0.001;
 
@@ -35,9 +35,7 @@ console.log('time now: ' + t.toGMTString());
 
 // TODO
 // check if low light images aren't disturbing 
-// shuffle training data
 // use cross-entropy error function
-
 // add learning rate to the params
 // add pruning
 
@@ -48,18 +46,12 @@ var trainingSet = [];
 var testedSet = [];
 // var perceptron = new Architect.Perceptron(INPUT_LAYER, HIDDEN_LAYER, 3);
 // var trainer = new Trainer(perceptron);
-var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 5);
+var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3);
 net.learning_rate = 0.3;
 console.log('neural network initialized\n ');
 
 var DBdata = helpers.loadDatabase(DB_NAME);
-
-if (false) {
-	DBdata = shuffle(DBdata); // we want to have different test data every time
-	console.log('shuffle shuffle db data, hm hm hm');
-}
 // DBdata = DBdata.slice(0, 310); // Test
-
 var TestData = DBdata.splice(-300);
 console.log('test rows spliced: ' + TestData.length);
 
@@ -76,6 +68,10 @@ fs.access(TRAINING_DATA_NAME, fs.F_OK, function(err) {
 			testNetwork(TestData);
 		});
 	} else {
+		if (true) {
+			DBdata = shuffle(DBdata); // we want to have different test data every time
+			console.log('shuffle shuffle db data, hm hm hm');
+		}
 		// load images to training set
 		imagesToTrainingSet(DBdata);
 	}
@@ -105,22 +101,32 @@ function imagesToTrainingSet(db_array) {
 	});
 }
 
-function getOutputValues(row) {
-	var parts = 5;
-	var output = Array(parts).fill(0); // needs --harmony
-	// var output = [0,0,0];
-	if (row[1] == -1) return output; //output = [0, 0, 0];
-	else {
-		var partLength = 640 / parts;
-		for (var i = 0; i < parts; i++) {
-			if (row[1] >= i * partLength && row[1] < (i + 1) * partLength) {
-				output[i] = 1;
-				break;
-			}
-		}
-	}
+// function getOutputValues(row) {
+// 	var parts = 3;
+// 	// var output = Array(parts).fill(0); // needs --harmony
+// 	var output = [0,0,0];
+// 	if (row[1] == -1) return output; //output = [0, 0, 0];
+// 	else {
+// 		var partLength = 640 / parts;
+// 		for (var i = 0; i < parts; i++) {
+// 			if (row[1] >= i * partLength && row[1] < (i + 1) * partLength) {
+// 				output[i] = 1;
+// 				break;
+// 			}
+// 		}
+// 	}
 
-	return output;
+// 	return output;
+// }
+
+function getOutputValues(row) {
+	if (row[1] == -1) return [0,0,0];
+
+	var x1 = Math.max(1 - (row[1] / 320), 0);
+	var x2 = 1 - Math.abs(row[1] - 320) / 320;
+	var x3 = Math.max(1 - (Math.abs(row[1] - 640) / 320), 0);
+	// console.log([x1,x2,x3]); console.log(' ');
+	return [x1, x2, x3];
 }
 
 
@@ -164,7 +170,7 @@ function addImage(imageName, outputValues) {
 
 function trainNetwork() {
 	console.log(' \ntraining set length: ' + trainingSet.length + ' ... train now ...');
-	
+
 	net.train(trainingSet, {
 		error: DESIRED_ERROR,
 		epochs_between_reports: 10,
@@ -184,6 +190,8 @@ function testNetwork(test_array) {
 		if (test_array.length > 0)
 			testNetwork(test_array);
 		else {
+			// empty records_wrong
+
 			var testedSuccess = 0;
 			var totalTestError = 0;
 
@@ -253,10 +261,10 @@ function testImage(imageName, optimalValues) {
 					testRow.optimalValues = optimalValues;
 
 					testRow.error = 0;
-					for (var i=0; i<res.length; i++){
-						testRow.error += Math.abs(res[i] - optimalValues[i]);	
+					for (var i = 0; i < res.length; i++) {
+						testRow.error += Math.abs(res[i] - optimalValues[i]);
 					}
-					
+
 					// TODO not sure what to take here, more research needed
 					if (testRow.error < 0.3) testRow.success = true;
 					else if (optimalValues != [0, 0, 0] && isMax(optimalValues) == isMax(res) && testRow.error < 0.8) testRow.success = true;
