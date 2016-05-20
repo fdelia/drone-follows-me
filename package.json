@@ -1,0 +1,24 @@
+{
+  "name": "drone",
+  "version": "1.0.0",
+  "description": "Just hacking around - don't look at me 🙈",
+  "main": "DroneHelpers.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fdelia/drone-tests.git"
+  },
+  "author": "Fabio D'Elia",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fdelia/drone-tests/issues"
+  },
+  "homepage": "https://github.com/fdelia/drone-tests#readme",
+  "dependencies": {
+    "opencv": "^5.0.0",
+    "png-js": "^0.1.1"
+  }
+}
