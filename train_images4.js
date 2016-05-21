@@ -1,7 +1,7 @@
-const PIXEL_DIVIDER = 16; // früher "TEILER", auch in follow_hand.js anpassen!
-const MARGIN_DIVIDER = 20; // auch in follow_hand.js anpassen!
+const PIXEL_DIVIDER = 20; // früher "TEILER", auch in follow_hand.js anpassen!
+const MARGIN_DIVIDER = 0; // auch in follow_hand.js anpassen!
 
-const INPUT_LAYER = 2220;
+const INPUT_LAYER = 1728;
 const HIDDEN_LAYER = 35;
 const MAX_ITERATIONS = 10; // should go up to 10k-100k, maybe with learning rate 0.1
 
@@ -34,12 +34,35 @@ console.log('time now: ' + t.toGMTString());
 // add pruning
 // (add db-shuffle mode (which doesnt take the saved training data))
 
+function Perceptron(input, hidden, output)
+{
+    // create the layers
+    var inputLayer = new Layer(input);
+    var hiddenLayer = new Layer(hidden);
+    var outputLayer = new Layer(output);
 
+    // connect the layers
+    inputLayer.project(hiddenLayer);
+    hiddenLayer.project(hiddenLayer, Layer.connectionType.ALL_TO_ELSE);
+    hiddenLayer.project(outputLayer);
+
+    // set the layers
+    this.set({
+        input: inputLayer,
+        hidden: [hiddenLayer],
+        output: outputLayer
+    });
+}
+
+// extend the prototype chain
+Perceptron.prototype = new Network();
+Perceptron.prototype.constructor = Perceptron;
 
 // input, hidden (...), output layer
 var trainingSet = [];
 var testedSet = [];
 var perceptron = new Architect.Perceptron(INPUT_LAYER, HIDDEN_LAYER, 3);
+
 var trainer = new Trainer(perceptron);
 console.log('neural network initialized\n ')
 

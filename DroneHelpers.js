@@ -1,4 +1,5 @@
 var fs = require('fs');
+var PNG = require('png-js');
 
 
 var Obj = {}
@@ -134,9 +135,43 @@ Obj.getInputData2 = function(self, sectorWidth, marginDivider) {
 	return sectors;
 }
 
+var showedInputdataLength = false; // stupid
+Obj.getInputDataFromImage = function(imageName, PIXEL_DIVIDER) {
+	var path = 'records/' + imageName;
+
+	var promise = new Promise(function(resolve, reject) {
+		fs.access(path, fs.F_OK, function(err) {
+			if (err) {
+				console.log('file not found: ' + path);
+				resolve(false);
+			} else {
+				PNG.decode(path, function(pixels) {
+					var self = {
+						data: pixels,
+						height: 360,
+						width: 640
+					}
+					var inputData = Obj.getInputData(self, PIXEL_DIVIDER, 0);
+					// var inputData = helpers.getInputData2(self, SECTOR_WIDTH, 0);
+					inputData = Obj.standardizeData(inputData);
+					if (!showedInputdataLength) {
+						console.log('   (length input data: ' + inputData.length + ' must be = # input layer neurons)');
+						showedInputdataLength = true;
+					}
+
+					resolve(inputData);
+				});
+			}
+		});
+	});
+
+	return promise;
+}
+
 
 Obj.standardizeData = function(data) {
-	var avg = this.average(data);
+	// var avg = this.average(data);
+	var avg = 128;
 	for (var i = 0; i < data.length; i++) {
 		data[i] = (data[i] - avg) / 255;
 	}

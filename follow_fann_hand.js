@@ -8,7 +8,7 @@ const MARGIN_DIVIDER = 20; // übernehmen aus train_images
 // const DB_NAME = 'database.csv';
 // const TRAINING_DATA_NAME = 'saves/trainingData_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '.json';
 // const NETWORK_NAME = 'saves/perceptron' + '_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_it' + MAX_ITERATIONS + '.json';
-const NETWORK_NAME = 'saves/nn_p20_m0_in1728_h100_e0.001.json';
+const NETWORK_NAME = 'saves/nn_p20_m0_in1728_h100_e0.0005.json';
 
 
 
@@ -37,6 +37,8 @@ var net = new fann.load(NETWORK_NAME);
 console.log('battery: ' + client.battery())
 
 var pngStream = client.getPngStream();
+var resStack = [];
+var oldRes;
 pngStream.on('data', function(buffer) {
 	// fs.writeFile("./temp_img.png", buffer, function(err) {
 	// 	if (err) {
@@ -61,7 +63,20 @@ pngStream.on('data', function(buffer) {
 		// var res = perceptron.activate(inputData);
 		var res = net.run(inputData);
 
-		displayResult(res);
+
+		// resStack.push(res);
+		// if (resStack.lenght > 3) resStack.shift();
+		// var sums = resStack.reduce(function(prev, cur, ind, arr) {
+		// 	return [prev[0] + cur[0], prev[1] + cur[1], prev[2] + cur[2]];
+		// });
+		// sums = sums.map(function(i) {
+		// 	return i / resStack.length;
+		// });
+
+
+		// displayResult(res);
+		if (oldRes) displayResult([(res[0] + oldRes[0]) / 2, (res[1] + oldRes[1]) / 2, (res[2] + oldRes[2]) / 2]);
+		oldRes = res;
 	});
 	// PNG2.decode(png, function(pixels){
 	// 	console.log(pixels);

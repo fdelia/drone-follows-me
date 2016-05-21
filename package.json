@@ -19,6 +19,7 @@
   "homepage": "https://github.com/fdelia/drone-tests#readme",
   "dependencies": {
     "opencv": "^5.0.0",
-    "png-js": "^0.1.1"
+    "png-js": "^0.1.1",
+    "save-pixels": "^2.3.3"
   }
 }

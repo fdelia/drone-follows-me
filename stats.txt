@@ -110,3 +110,16 @@ s12, 546/20, 0, 0.001   success: 0 / 300  ,  0 %  (avg. err: 1), FANN
 20, 1728/100, 0, 0.001   success: 110 / 300  ,  37 %  (avg. err: 0.9), FANN
 
 # now linear transition from/to left-center-right
+20, 1728/50, 0, 0.001   success: 134 / 300  ,  45 %  (avg. err: 0.6), FANN
+20, 1728/100, 0, 0.001   success: 236 / 300  ,  79 %  (avg. err: 0.3), FANN
+20, 1728/100, 0, 0.001   success: 225 / 300  ,  75 %  (avg. err: 0.3), FANN
+20, 1728/100, 0, 0.0005   success: 293 / 300  ,  98 %  (avg. err: 0.1), FANN
+20, 1728/100, 0, 0.0001   success: 288 / 300  ,  96 %  (avg. err: 0.1), FANN
+20, 1728/150, 0, 0.0005   success: 291 / 300  ,  97 %  (avg. err: 0.1), FANN
+20, 1728/200, 0, 0.0005   success: 294 / 300  ,  98 %  (avg. err: 0.1), FANN
+20, 1728/300, 0, 0.0005   success: 293 / 300  ,  98 %  (avg. err: 0.1), FANN
+20, 1728/100, 0, 0.0005   success: 214 / 300  ,  71 %  (avg. err: 0.4), FANN
+20, 1728/100, 0, 0.0005   success: 217 / 300  ,  72 %  (avg. err: 0.4), FANN
+20, 1728/100, 0, 0.0005   success: 217 / 300  ,  72 %  (avg. err: 0.4), FANN
+20, 1728/300, 0, 0.0005   success: 290 / 300  ,  97 %  (avg. err: 0.1), FANN
+20, 1728/500, 0, 0.0005   success: 293 / 300  ,  98 %  (avg. err: 0.1), FANN

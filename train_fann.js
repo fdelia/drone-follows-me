@@ -1,11 +1,11 @@
-const PIXEL_DIVIDER = 20; // früher "TEILER", auch in follow_hand.js anpassen!
+const PIXEL_DIVIDER = 16; // früher "TEILER", auch in follow_hand.js anpassen!
 const MARGIN_DIVIDER = 0; // auch in follow_hand.js anpassen!
 const SECTOR_WIDTH = 32;
 
-const INPUT_LAYER = 1728;
-const HIDDEN_LAYER = 50;
+const INPUT_LAYER = 2760;
+const HIDDEN_LAYER = 300;
 // const MAX_ITERATIONS = 0; // should go up to 10k-100k, maybe with learning rate 0.1
-const DESIRED_ERROR = 0.001;
+const DESIRED_ERROR = 0.0005;
 
 const DB_NAME = 'database.csv';
 const TRAINING_DATA_NAME = 'saves/trainingData_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '.json';
@@ -15,7 +15,7 @@ const NETWORK_NAME = 'saves/nn' + '_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER +
 // const NETWORK_NAME = 'saves/nn' + '_s' + SECTOR_WIDTH + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_e' + DESIRED_ERROR + '.json';
 
 
-var synaptic = require('synaptic'); // this line is not needed in the browser
+var synaptic = require('synaptic');
 var Neuron = synaptic.Neuron,
 	Layer = synaptic.Layer,
 	Network = synaptic.Network,
@@ -41,16 +41,16 @@ console.log('time now: ' + t.toGMTString());
 
 
 
-// input, hidden (...), output layer
 var trainingSet = [];
 var testedSet = [];
 // var perceptron = new Architect.Perceptron(INPUT_LAYER, HIDDEN_LAYER, 3);
 // var trainer = new Trainer(perceptron);
-var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3);
+var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3); // input, hidden (...), output layer
 net.learning_rate = 0.3;
 console.log('neural network initialized\n ');
 
 var DBdata = helpers.loadDatabase(DB_NAME);
+DBdata = shuffle(DBdata); // we want to have different test data every time
 // DBdata = DBdata.slice(0, 310); // Test
 var TestData = DBdata.splice(-300);
 console.log('test rows spliced: ' + TestData.length);
@@ -69,7 +69,7 @@ fs.access(TRAINING_DATA_NAME, fs.F_OK, function(err) {
 		});
 	} else {
 		if (true) {
-			DBdata = shuffle(DBdata); // we want to have different test data every time
+			DBdata = shuffle(DBdata);
 			console.log('shuffle shuffle db data, hm hm hm');
 		}
 		// load images to training set
@@ -154,10 +154,6 @@ function addImage(imageName, outputValues) {
 						showedInputdataLength = true;
 					}
 
-					// trainingSet.push({
-					// 	input: inputData,
-					// 	output: outputValues
-					// });
 					trainingSet.push([inputData, outputValues]);
 					resolve();
 				});
