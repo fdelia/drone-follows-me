@@ -1,11 +1,10 @@
-const PIXEL_DIVIDER = 16; // früher "TEILER", auch in follow_hand.js anpassen!
+const PIXEL_DIVIDER = 10; // früher "TEILER", auch in follow_hand.js anpassen!
 const MARGIN_DIVIDER = 0; // auch in follow_hand.js anpassen!
-const SECTOR_WIDTH = 32;
+// const SECTOR_WIDTH = 32;
 
-const INPUT_LAYER = 2760;
-const HIDDEN_LAYER = 300;
-// const MAX_ITERATIONS = 0; // should go up to 10k-100k, maybe with learning rate 0.1
-const DESIRED_ERROR = 0.0005;
+const INPUT_LAYER = 6912;
+const HIDDEN_LAYER = 800;
+const DESIRED_ERROR = 0.01; // high error to avoid overfitting?
 
 const DB_NAME = 'database.csv';
 const TRAINING_DATA_NAME = 'saves/trainingData_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '.json';
@@ -34,6 +33,7 @@ console.log('time now: ' + t.toGMTString());
 
 
 // TODO
+// break training todo into parts to save it different files
 // check if low light images aren't disturbing 
 // use cross-entropy error function
 // add learning rate to the params
@@ -51,8 +51,8 @@ console.log('neural network initialized\n ');
 
 var DBdata = helpers.loadDatabase(DB_NAME);
 DBdata = shuffle(DBdata); // we want to have different test data every time
-// DBdata = DBdata.slice(0, 310); // Test
-var TestData = DBdata.splice(-300);
+var TestData = DBdata.splice(-1 * Math.round(DBdata.length / 5));
+// DBdata = DBdata.splice(-2000);
 console.log('test rows spliced: ' + TestData.length);
 
 // load training data if it exists for this configs
@@ -120,7 +120,7 @@ function imagesToTrainingSet(db_array) {
 // }
 
 function getOutputValues(row) {
-	if (row[1] == -1) return [0,0,0];
+	if (row[1] == -1) return [0, 0, 0];
 
 	var x1 = Math.max(1 - (row[1] / 320), 0);
 	var x2 = 1 - Math.abs(row[1] - 320) / 320;
@@ -169,7 +169,7 @@ function trainNetwork() {
 
 	net.train(trainingSet, {
 		error: DESIRED_ERROR,
-		epochs_between_reports: 10,
+		epochs_between_reports: 5,
 		epochs: 1000
 	});
 
@@ -279,11 +279,17 @@ function testImage(imageName, optimalValues) {
 
 function saveTrainingData() {
 	var promise = new Promise(function(resolve, reject) {
-		fs.writeFile(TRAINING_DATA_NAME, JSON.stringify(trainingSet), function(err) {
-			if (err) console.log('error: ' + err);
-			else console.log('training data saved')
+		try {
+			fs.writeFile(TRAINING_DATA_NAME, JSON.stringify(trainingSet), function(err) {
+				if (err) console.log('error: ' + err);
+				else console.log('training data saved')
+				resolve();
+			});
+		} catch (err) {
+			console.log('error: ' + err);
+		} finally {
 			resolve();
-		});
+		}
 	});
 
 	return promise;
