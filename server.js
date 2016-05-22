@@ -38,7 +38,7 @@ app.get('/set/', function(req, res) {
 	if (!req.query.hasImages) {
 		// load new images
 		var newImages = [];
-		for (var i = 0; i < 10; i++) {
+		for (var i = 0; i < 20; i++) {
 			// if save is too slow, don't use the same image again
 			if (imagesNotInDB[i] && imagesNotInDB[i] != req.query.imageName) newImages.push(imagesNotInDB[i]);
 		}

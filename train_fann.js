@@ -3,8 +3,8 @@ const MARGIN_DIVIDER = 0; // auch in follow_hand.js anpassen!
 // const SECTOR_WIDTH = 32;
 
 const INPUT_LAYER = 6912;
-const HIDDEN_LAYER = 800;
-const DESIRED_ERROR = 0.01; // high error to avoid overfitting?
+const HIDDEN_LAYER = 2400;
+const DESIRED_ERROR = 0.05; // high error to avoid overfitting?
 
 const DB_NAME = 'database.csv';
 const TRAINING_DATA_NAME = 'saves/trainingData_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '.json';
@@ -14,14 +14,7 @@ const NETWORK_NAME = 'saves/nn' + '_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER +
 // const NETWORK_NAME = 'saves/nn' + '_s' + SECTOR_WIDTH + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_e' + DESIRED_ERROR + '.json';
 
 
-var synaptic = require('synaptic');
-var Neuron = synaptic.Neuron,
-	Layer = synaptic.Layer,
-	Network = synaptic.Network,
-	Trainer = synaptic.Trainer,
-	Architect = synaptic.Architect;
 var fann = require('fann');
-
 var fs = require('fs')
 var helpers = require('./DroneHelpers.js');
 // var cv = require('opencv')
@@ -45,7 +38,9 @@ var trainingSet = [];
 var testedSet = [];
 // var perceptron = new Architect.Perceptron(INPUT_LAYER, HIDDEN_LAYER, 3);
 // var trainer = new Trainer(perceptron);
-var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3); // input, hidden (...), output layer
+// var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3); // input, hidden (...), output layer
+var net = new fann.load(NETWORK_NAME);
+
 net.learning_rate = 0.3;
 console.log('neural network initialized\n ');
 
@@ -89,14 +84,14 @@ function imagesToTrainingSet(db_array) {
 			imagesToTrainingSet(db_array);
 		else {
 			// save new training data
-			// console.log('Training data will not be saved for the moment because of data shuffling');
-			var p1 = saveTrainingData();
-			p1.then(function() {
-				console.log('start training');
-				trainNetwork();
-				saveNetwork();
-				testNetwork(TestData);
-			});
+			console.log('Training data will not be saved for the moment (it\'s too big)');
+			// var p1 = saveTrainingData();
+			// p1.then(function() {
+			console.log('start training');
+			trainNetwork();
+			saveNetwork();
+			testNetwork(TestData);
+			// });
 		}
 	});
 }
@@ -169,8 +164,8 @@ function trainNetwork() {
 
 	net.train(trainingSet, {
 		error: DESIRED_ERROR,
-		epochs_between_reports: 5,
-		epochs: 1000
+		epochs_between_reports: 2,
+		epochs: 100
 	});
 
 }
@@ -214,6 +209,10 @@ function testNetwork(test_array) {
 			// var summary = 's'+ SECTOR_WIDTH + ', ' + INPUT_LAYER + '/' + HIDDEN_LAYER + ', ' + MARGIN_DIVIDER + ', ' + DESIRED_ERROR + '   success: ' + testedSuccess + ' / ' + testedSet.length + '  ,  ' + Math.round(testedSuccess / testedSet.length * 100) + ' %  (avg. err: ' + Math.round(totalTestError / testedSet.length * 10) / 10 + '), FANN';
 			console.log('\nPixel divider, Input, Hidden, Margin, desired error');
 			console.log(summary);
+
+			var t = new Date();
+			console.log('\ntime now: ' + t.toGMTString());
+
 			// console.log('average error: ' + Math.round(totalTestError / testedSet.length * 10) / 10)
 
 			fs.appendFile('stats.txt', '\n' + summary, function(err) {
