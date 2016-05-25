@@ -24,7 +24,7 @@ Obj.loadDatabase = function(dbName) {
 		return line[0] != 'undefined';
 	});
 
-	console.log('found ' + lines.length + ' images in database');
+	// console.log('found ' + lines.length + ' images in database');
 	return data;
 }
 
@@ -81,22 +81,32 @@ Obj.getSectors = function(pixels, sectorWidth, imageWidth, imageHeight) {
 // }
 
 
-Obj.getInputData = function(self, pixelDivider, marginDivider) {
+Obj.getInputData = function(self, pixelDivider) {
 	var newData = [];
 	var pixels = [];
 
 	// cut some margin out
-	if (marginDivider) var margin = Math.round(self.height / marginDivider);
-	else margin = 0;
+	// if (marginDivider) var margin = Math.round(self.height / marginDivider);
+	// else margin = 0;
+
+	var margin = 4; // because of average
 
 	for (var y = margin; y < self.height - margin; y++) {
 		for (var x = margin; x < self.width - margin; x++) {
 			var idx = (self.width * y + x) << 2;
 
 			if (x % pixelDivider == 0 && y % pixelDivider == 0) {
-				newData.push(self.data[idx]);
-				newData.push(self.data[idx + 1]);
-				newData.push(self.data[idx + 2]);
+				var r = (self.data[idx - 4] + self.data[idx + 0] + self.data[idx + 4]) / 3;
+				var g = (self.data[idx - 3] + self.data[idx + 1] + self.data[idx + 5]) / 3;
+				var b = (self.data[idx - 2] + self.data[idx + 2] + self.data[idx + 6]) / 3;
+				newData.push(r);
+				newData.push(g);
+				newData.push(b);
+
+
+				// newData.push(self.data[idx]);
+				// newData.push(self.data[idx + 1]);
+				// newData.push(self.data[idx + 2]);
 
 				// newData.push((toInterval(self.data[idx]) + toInterval(self.data[idx + 1]) + toInterval(self.data[idx + 2])) / 3)
 				// newData.push(Math.round((self.data[idx] + self.data[idx + 1] + self.data[idx + 2]) / 3));
@@ -108,15 +118,16 @@ Obj.getInputData = function(self, pixelDivider, marginDivider) {
 	return newData;
 }
 
-Obj.getInputData2 = function(self, sectorWidth, marginDivider) {
+Obj.getInputData2 = function(self, sectorWidth) {
 	var pixels = [],
 		red = [],
 		green = [],
 		blue = [];
 
 	// cut some margin out
-	if (marginDivider) var margin = Math.round(self.height / marginDivider);
-	else margin = 0;
+	// if (marginDivider) var margin = Math.round(self.height / marginDivider);
+	// else margin = 0;
+	var margin = 0;
 
 	// divide into colors (without alpha)
 	for (var y = margin; y < self.height - margin; y++) {

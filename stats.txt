@@ -127,6 +127,42 @@ s12, 546/20, 0, 0.001   success: 0 / 300  ,  0 %  (avg. err: 1), FANN
 16, 2760/600, 0, 0.0005   success: 265 / 300  ,  88 %  (avg. err: 0.2), FANN
 10, 6912/800, 0, 0.01   success: 268 / 631  ,  42 %  (avg. err: 0.6), FANN
 10, 6912/2400, 0, 0.01   success: 419 / 631  ,  66 %  (avg. err: 0.4), FANN
-10, 6912/2400, 0, 0.01   success: 108 / 631  ,  17 %  (avg. err: 1.1), FANN, same network from above
+10, 6912/2400, 0, 0.01   success: 108 / 631  ,  17 %  (avg. err: 1.1), FANN, same network from above, 1 epoch only
 10, 6912/2400, 0, 0.01   success: 316 / 631  ,  50 %  (avg. err: 0.5), FANN, same again
 10, 6912/2400, 0, 0.01   success: 404 / 631  ,  64 %  (avg. err: 0.4), FANN, "
+8, 10800/3200, 0, 0.01   success: 405 / 631  ,  64 %  (avg. err: 0.4), FANN
+8, 10800/1200, 0, 0.05   success: 400 / 716  ,  56 %  (avg. err: 0.5), FANN
+6, 19260/1200, 0, 0.05   success: 385 / 716  ,  54 %  (avg. err: 0.5), FANN
+5, 27648/1200, 0, 0.05   success: 395 / 716  ,  55 %  (avg. err: 0.5), FANN
+
+18, 2160/300, 0, 0.05   success: 7 / 716  ,  1 %  (avg. err: 1.5), FANN
+10, 6912/100, 0, 0.05   success: 5 / 20  ,  25 %  (avg. err: 0.9), FANN
+10, 6912/100, 0, 0.05   success: 2 / 20  ,  10 %  (avg. err: 0.8), FANN
+10, 6912/100, 0, 0.05   success: 12 / 20  ,  60 %  (avg. err: 0.6), FANN
+10, 6912/100, 0, 0.01   success: 11 / 20  ,  55 %  (avg. err: 0.5), FANN
+10, 6912/100, 0, 0.01   success: 9 / 20  ,  45 %  (avg. err: 0.7), FANN
+10, 6912/1000, 0, 0.05   success: 10 / 20  ,  50 %  (avg. err: 0.6), FANN
+10, 6912/2000, 0, 0.05   success: 9 / 20  ,  45 %  (avg. err: 0.7), FANN
+10, 6912/3000, 0, 0.05   success: 12 / 20  ,  60 %  (avg. err: 0.5), FANN
+10, 6912/3000, 0, 0.05   success: 7 / 20  ,  35 %  (avg. err: 0.9), FANN
+10, 6912/4000, 0, 0.05   success: 4 / 20  ,  20 %  (avg. err: 1.2), FANN
+6, 19260/1000, 0, 0.05   success: 8 / 20  ,  40 %  (avg. err: 0.8), FANN
+10, 6912/4000, 0, 0.05   success: 4 / 20  ,  20 %  (avg. err: 1.1), FANN
+6, 19260/1000, 0, 0.05   success: 9 / 20  ,  45 %  (avg. err: 0.6), FANN
+6, 19260/1000, 0, 0.05   success: 19 / 40  ,  48 %  (avg. err: 0.6), FANN
+5, 27648/1000, 0, 0.05   success: 17 / 40  ,  43 %  (avg. err: 0.6), FANN
+5, 27648/500, 0, 0.05   success: 16 / 40  ,  40 %  (avg. err: 0.7), FANN
+5, 27648/1000, 0, 0.05   success: 15 / 40  ,  38 %  (avg. err: 0.7), FANN
+5, 27648/500, 0, 0.05   success: 18 / 40  ,  45 %  (avg. err: 0.7), FANN
+
+# use averages at getInputData
+5, 27051/500, 0, 0.05   success: 17 / 40  ,  43 %  (avg. err: 0.6), FANN
+5, 27051/500, 0, 0.05   success: 20 / 40  ,  50 %  (avg. err: 0.6), FANN
+5, 27051/500, 0, 0.05   success: 31 / 75  ,  41 %  (avg. err: 0.6), FANN
+5, 27051/500, 0, 0.05   success: 32 / 75  ,  43 %  (avg. err: 0.6), FANN
+4, 41712/500, 0, 0.05   success: 19 / 50  ,  38 %  (avg. err: 0.6), FANN
+4, 41712/500, 0, 0.05   success: 23 / 50  ,  46 %  (avg. err: 0.7), FANN
+4, 41712/500, 0, 0.05   success: 30 / 75  ,  40 %  (avg. err: 0.6), FANN
+3, 73710/300, 0, 0.05   success: 20 / 50  ,  40 %  (avg. err: 0.7), FANN
+3, 73710/300, 0, 0.05   success: 36 / 75  ,  48 %  (avg. err: 0.5), FANN
+3, 73710/300, 0, 0.05   success: 40 / 100  ,  40 %  (avg. err: 0.6), FANN

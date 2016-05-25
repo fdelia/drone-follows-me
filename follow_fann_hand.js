@@ -1,13 +1,6 @@
 const PIXEL_DIVIDER = 22; // früher "TEILER", übernehmen aus train_images
 const MARGIN_DIVIDER = 20; // übernehmen aus train_images
 
-// const INPUT_LAYER = 897;
-// const HIDDEN_LAYER = 20;
-// const MAX_ITERATIONS = 100;
-
-// const DB_NAME = 'database.csv';
-// const TRAINING_DATA_NAME = 'saves/trainingData_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '.json';
-// const NETWORK_NAME = 'saves/perceptron' + '_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_it' + MAX_ITERATIONS + '.json';
 const NETWORK_NAME = 'saves/nn_p20_m0_in1728_h100_e0.0005.json';
 
 
@@ -28,10 +21,6 @@ var Neuron = synaptic.Neuron,
 
 // var PNG = require('pngjs').PNG;
 var PNG = require('png-js');
-
-
-// var network_data = JSON.parse(fs.readFileSync(NETWORK_NAME));
-// var perceptron = Network.fromJSON(network_data);
 var net = new fann.load(NETWORK_NAME);
 
 console.log('battery: ' + client.battery())
@@ -57,7 +46,7 @@ pngStream.on('data', function(buffer) {
 			width: 640
 		}
 
-		var inputData = helpers.getInputData(self, PIXEL_DIVIDER, MARGIN_DIVIDER);
+		var inputData = helpers.getInputData(self, PIXEL_DIVIDER);
 		inputData = helpers.standardizeData(inputData);
 
 		// var res = perceptron.activate(inputData);

@@ -1,14 +1,18 @@
-const PIXEL_DIVIDER = 10; // früher "TEILER", auch in follow_hand.js anpassen!
 const MARGIN_DIVIDER = 0; // auch in follow_hand.js anpassen!
 // const SECTOR_WIDTH = 32;
 
-const INPUT_LAYER = 6912;
-const HIDDEN_LAYER = 2400;
+const PIXEL_DIVIDER = 2; // früher "TEILER", auch in follow_hand.js anpassen!
+const INPUT_LAYER = 166848;
+const HIDDEN_LAYER = 300;
 const DESIRED_ERROR = 0.05; // high error to avoid overfitting?
 
 const DB_NAME = 'database.csv';
 const TRAINING_DATA_NAME = 'saves/trainingData_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '.json';
 const NETWORK_NAME = 'saves/nn' + '_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_e' + DESIRED_ERROR + '.json';
+
+const NUMBER_DB_DATA = 200;
+const MAX_EPOCHS = 100;
+const LEARNING_RATE = 0.3;
 
 // const TRAINING_DATA_NAME = 'saves/trainingData_s' + SECTOR_WIDTH + '_m' + MARGIN_DIVIDER + '.json';
 // const NETWORK_NAME = 'saves/nn' + '_s' + SECTOR_WIDTH + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_e' + DESIRED_ERROR + '.json';
@@ -29,7 +33,6 @@ console.log('time now: ' + t.toGMTString());
 // break training todo into parts to save it different files
 // check if low light images aren't disturbing 
 // use cross-entropy error function
-// add learning rate to the params
 // add pruning
 
 
@@ -38,16 +41,17 @@ var trainingSet = [];
 var testedSet = [];
 // var perceptron = new Architect.Perceptron(INPUT_LAYER, HIDDEN_LAYER, 3);
 // var trainer = new Trainer(perceptron);
-// var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3); // input, hidden (...), output layer
-var net = new fann.load(NETWORK_NAME);
+var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3); // input, hidden (...), output layer
+// var net = new fann.load(NETWORK_NAME);
 
-net.learning_rate = 0.3;
+net.learning_rate = LEARNING_RATE;
 console.log('neural network initialized\n ');
 
 var DBdata = helpers.loadDatabase(DB_NAME);
 DBdata = shuffle(DBdata); // we want to have different test data every time
-var TestData = DBdata.splice(-1 * Math.round(DBdata.length / 5));
-// DBdata = DBdata.splice(-2000);
+if (NUMBER_DB_DATA < DBdata.length) DBdata = DBdata.splice(-NUMBER_DB_DATA);
+console.log('working with '+DBdata.length+' rows');
+var TestData = DBdata.splice(-1 * Math.round(DBdata.length / 4));
 console.log('test rows spliced: ' + TestData.length);
 
 // load training data if it exists for this configs
@@ -88,8 +92,12 @@ function imagesToTrainingSet(db_array) {
 			// var p1 = saveTrainingData();
 			// p1.then(function() {
 			console.log('start training');
+			// trainingSet.map(function(i){
+			// 	console.log(i[1])
+			// })
 			trainNetwork();
-			saveNetwork();
+			console.log('not saving network for the moment because of size');
+			//saveNetwork();
 			testNetwork(TestData);
 			// });
 		}
@@ -124,6 +132,11 @@ function getOutputValues(row) {
 	return [x1, x2, x3];
 }
 
+// function getOutputValues(row){
+// 	if (row[1] == -1) return [-1, -1]
+// 	return [row[1]/640, row[2]/320];	
+// }
+
 
 var showedInputdataLength = false; // stupid
 function addImage(imageName, outputValues) {
@@ -141,7 +154,7 @@ function addImage(imageName, outputValues) {
 						height: 360,
 						width: 640
 					}
-					var inputData = helpers.getInputData(self, PIXEL_DIVIDER, MARGIN_DIVIDER);
+					var inputData = helpers.getInputData(self, PIXEL_DIVIDER);
 					// var inputData = helpers.getInputData2(self, SECTOR_WIDTH, MARGIN_DIVIDER);
 					inputData = helpers.standardizeData(inputData);
 					if (!showedInputdataLength) {
@@ -161,13 +174,15 @@ function addImage(imageName, outputValues) {
 
 function trainNetwork() {
 	console.log(' \ntraining set length: ' + trainingSet.length + ' ... train now ...');
-
-	net.train(trainingSet, {
-		error: DESIRED_ERROR,
-		epochs_between_reports: 2,
-		epochs: 100
-	});
-
+	try {
+		net.train(trainingSet, {
+			error: DESIRED_ERROR,
+			epochs_between_reports: 2,
+			epochs: MAX_EPOCHS
+		});
+	} catch (err) {
+		console.log('error: ' + err);
+	}
 }
 
 
@@ -245,7 +260,7 @@ function testImage(imageName, optimalValues) {
 						width: 640
 					}
 
-					var inputData = helpers.getInputData(self, PIXEL_DIVIDER, MARGIN_DIVIDER);
+					var inputData = helpers.getInputData(self, PIXEL_DIVIDER);
 					// var inputData = helpers.getInputData2(self, SECTOR_WIDTH, MARGIN_DIVIDER);
 					inputData = helpers.standardizeData(inputData);
 					var res = net.run(inputData);
