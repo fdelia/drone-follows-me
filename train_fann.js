@@ -3,15 +3,15 @@ const MARGIN_DIVIDER = 0; // auch in follow_hand.js anpassen!
 
 const PIXEL_DIVIDER = 2; // früher "TEILER", auch in follow_hand.js anpassen!
 const INPUT_LAYER = 166848;
-const HIDDEN_LAYER = 300;
-const DESIRED_ERROR = 0.05; // high error to avoid overfitting?
+const HIDDEN_LAYER = 1000;
+const DESIRED_ERROR = 0.1; // high error to avoid overfitting?
 
 const DB_NAME = 'database.csv';
 const TRAINING_DATA_NAME = 'saves/trainingData_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '.json';
 const NETWORK_NAME = 'saves/nn' + '_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_e' + DESIRED_ERROR + '.json';
 
-const NUMBER_DB_DATA = 200;
-const MAX_EPOCHS = 100;
+const NUMBER_DB_DATA = 400;
+const MAX_EPOCHS = 1;
 const LEARNING_RATE = 0.3;
 
 // const TRAINING_DATA_NAME = 'saves/trainingData_s' + SECTOR_WIDTH + '_m' + MARGIN_DIVIDER + '.json';
@@ -36,23 +36,23 @@ console.log('time now: ' + t.toGMTString());
 // add pruning
 
 
-
 var trainingSet = [];
 var testedSet = [];
-// var perceptron = new Architect.Perceptron(INPUT_LAYER, HIDDEN_LAYER, 3);
-// var trainer = new Trainer(perceptron);
-var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3); // input, hidden (...), output layer
-// var net = new fann.load(NETWORK_NAME);
+// var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3); // input, hidden (...), output layer
+var net = new fann.load(NETWORK_NAME);
 
 net.learning_rate = LEARNING_RATE;
 console.log('neural network initialized\n ');
+var t = new Date();
+console.log('time now: ' + t.toGMTString());
+
 
 var DBdata = helpers.loadDatabase(DB_NAME);
 DBdata = shuffle(DBdata); // we want to have different test data every time
 if (NUMBER_DB_DATA < DBdata.length) DBdata = DBdata.splice(-NUMBER_DB_DATA);
-console.log('working with '+DBdata.length+' rows');
+console.log('working with ' + DBdata.length + ' rows in total');
 var TestData = DBdata.splice(-1 * Math.round(DBdata.length / 4));
-console.log('test rows spliced: ' + TestData.length);
+console.log('test rows spliced: ' + TestData.length + ', rest is training data');
 
 // load training data if it exists for this configs
 fs.access(TRAINING_DATA_NAME, fs.F_OK, function(err) {
@@ -96,8 +96,8 @@ function imagesToTrainingSet(db_array) {
 			// 	console.log(i[1])
 			// })
 			trainNetwork();
-			console.log('not saving network for the moment because of size');
-			//saveNetwork();
+			// console.log('not saving network for the moment because of size');
+			saveNetwork();
 			testNetwork(TestData);
 			// });
 		}
@@ -233,6 +233,15 @@ function testNetwork(test_array) {
 			fs.appendFile('stats.txt', '\n' + summary, function(err) {
 				if (err) console.log(err);
 				else console.log(' saved stats ');
+
+			});
+
+
+			// notice user that script is finished     (TODO: promise)
+			var exec = require('child_process').exec;
+			var cmd = 'tput bel;say -v Bahh "meh"; sleep 2; say -v Bahh "meh"; sleep 2; say -v Bahh "meh"; sleep 2; say -v Bahh "meh"; sleep 2; say -v Bahh "meh"';
+			exec(cmd, function(error, stdout, stderr) {
+				// command output is in stdout
 			});
 		}
 	});
@@ -312,12 +321,6 @@ function saveTrainingData() {
 function saveNetwork() {
 	net.save(NETWORK_NAME);
 	console.log('network saved')
-		// var data = JSON.stringify(perceptron.toJSON());
-
-	// fs.writeFile(NETWORK_NAME, data, function(err) {
-	// 	if (err) console.log('error: ' + err);
-	// 	else console.log('network saved')
-	// });
 }
 
 

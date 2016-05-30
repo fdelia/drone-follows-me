@@ -1,7 +1,7 @@
-const PIXEL_DIVIDER = 22; // früher "TEILER", übernehmen aus train_images
-const MARGIN_DIVIDER = 20; // übernehmen aus train_images
+const PIXEL_DIVIDER = 2; // früher "TEILER", übernehmen aus train_images
+const MARGIN_DIVIDER = 0; // übernehmen aus train_images
 
-const NETWORK_NAME = 'saves/nn_p20_m0_in1728_h100_e0.0005.json';
+const NETWORK_NAME = 'saves/nn_p2_m0_in166848_h1000_e0.1.json';
 
 
 
@@ -23,11 +23,12 @@ var Neuron = synaptic.Neuron,
 var PNG = require('png-js');
 var net = new fann.load(NETWORK_NAME);
 
-console.log('battery: ' + client.battery())
+console.log('neural network loaded\nbattery: ' + client.battery())
 
 var pngStream = client.getPngStream();
 var resStack = [];
 var oldRes;
+var counter = 0;
 pngStream.on('data', function(buffer) {
 	// fs.writeFile("./temp_img.png", buffer, function(err) {
 	// 	if (err) {
@@ -45,6 +46,11 @@ pngStream.on('data', function(buffer) {
 			height: 360,
 			width: 640
 		}
+
+		// only compute every x frame
+		counter++;
+		if (counter % 4 != 0) return;
+		counter=0;
 
 		var inputData = helpers.getInputData(self, PIXEL_DIVIDER);
 		inputData = helpers.standardizeData(inputData);

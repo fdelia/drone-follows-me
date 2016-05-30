@@ -96,9 +96,24 @@ Obj.getInputData = function(self, pixelDivider) {
 			var idx = (self.width * y + x) << 2;
 
 			if (x % pixelDivider == 0 && y % pixelDivider == 0) {
-				var r = (self.data[idx - 4] + self.data[idx + 0] + self.data[idx + 4]) / 3;
+				function dt(idx_diff) {
+					return self.data[idx + idx_diff];
+				}
+
+				// var r = (self.data[idx - 4] + self.data[idx + 0] + self.data[idx + 4]) / 3;
+				var r = (dt(-4) + dt(+0) + dt(+4)) / 3;
+				r += (dt(-self.width - 4) + dt(-self.width + 0) + dt(-self.width + 4)) / 3;
+				r += (dt(+self.width - 4) + dt(+self.width + 0) + dt(+self.width + 4)) / 3;
+				r /= 3;
 				var g = (self.data[idx - 3] + self.data[idx + 1] + self.data[idx + 5]) / 3;
+				g += (dt(-self.width - 3) + dt(-self.width + 1) + dt(-self.width + 5)) / 3;
+				g += (dt(+self.width - 3) + dt(+self.width + 1) + dt(+self.width + 5)) / 3;
+				g /= 3;
 				var b = (self.data[idx - 2] + self.data[idx + 2] + self.data[idx + 6]) / 3;
+				b += (dt(-self.width - 2) + dt(-self.width + 2) + dt(-self.width + 6)) / 3;
+				b += (dt(+self.width - 2) + dt(+self.width + 2) + dt(+self.width + 6)) / 3;
+				b /= 3;
+
 				newData.push(r);
 				newData.push(g);
 				newData.push(b);
