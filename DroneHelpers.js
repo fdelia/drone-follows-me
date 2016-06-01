@@ -291,6 +291,10 @@ Obj.average = function(arr) {
 	return tot / arr.length;
 }
 
+Array.prototype.max = function() {
+  return Math.max.apply(null, this);
+};
+
 
 
 module.exports = Obj;

@@ -199,3 +199,13 @@ s12, 546/20, 0, 0.001   success: 0 / 300  ,  0 %  (avg. err: 1), FANN
 1, 4770/100, 0, 0.03   success: 136 / 250  ,  54 %  (avg. err: 0.5), FANN
 1, 4770/100, 0, 0.01   success: 132 / 250  ,  53 %  (avg. err: 0.5), FANN
 1, 4770/300, 0, 0.01   success: 144 / 250  ,  58 %  (avg. err: 0.5), FANN
+1, 4770/600, 0, 0.01   success: 142 / 250  ,  57 %  (avg. err: 0.5), FANN
+1, 4770/600, 0, 0.03   success: 60 / 125  ,  48 %  (avg. err: 0.6), FANN double training
+
+# Total DB images used, Input / Hidden, max Iterations, max Error
+1000, 4770/600, 100, 0.03   success: 135 / 250  ,  54 %  (avg. err: 0.5), FANN
+1000, 4770/300, 100, 0.01   success: 151 / 250  ,  60 %  (avg. err: 0.5), FANN
+1000, 4770/300, 100, 0.03   success: 107 / 250  ,  43 %  (avg. err: 0.6), FANN
+1000, 4770/300, 100, 0.03   success: 140 / 250  ,  56 %  (avg. err: 0.5), FANN
+1000, 4770/1200, 100, 0.03   success: 133 / 250  ,  53 %  (avg. err: 0.5), FANN
+99999, 4770/300, 100, 0.03   success: 535 / 895  ,  60 %  (avg. err: 0.5), FANN

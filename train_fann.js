@@ -1,19 +1,17 @@
-const MARGIN_DIVIDER = 0; // auch in follow_hand.js anpassen!
-// const SECTOR_WIDTH = 32;
+const MARGIN_DIVIDER = 0; // obsolete auch in follow_hand.js anpassen!
+const PIXEL_DIVIDER = 1; // obsolete früher "TEILER", auch in follow_hand.js anpassen!
 
-const PIXEL_DIVIDER = 1; // früher "TEILER", auch in follow_hand.js anpassen!
+const NUMBER_DB_DATA = 1000;
+
 const INPUT_LAYER = 4770;
-const HIDDEN_LAYER = 600;
-const DESIRED_ERROR = 0.01; // high error to avoid overfitting?
+const HIDDEN_LAYER = 300;
+const DESIRED_ERROR = 0.03; // high error to avoid overfitting?
+const MAX_EPOCHS = 100;
+const LEARNING_RATE = 0.2;
 
 const DB_NAME = 'database.csv';
 const TRAINING_DATA_NAME = 'saves/trainingData_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '.json';
 const NETWORK_NAME = 'saves/nn' + '_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_e' + DESIRED_ERROR + '.json';
-
-const NUMBER_DB_DATA = 1000;
-const MAX_EPOCHS = 100;
-const LEARNING_RATE = 0.2;
-
 // const TRAINING_DATA_NAME = 'saves/trainingData_s' + SECTOR_WIDTH + '_m' + MARGIN_DIVIDER + '.json';
 // const NETWORK_NAME = 'saves/nn' + '_s' + SECTOR_WIDTH + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_e' + DESIRED_ERROR + '.json';
 
@@ -79,13 +77,25 @@ fs.access(TRAINING_DATA_NAME, fs.F_OK, function(err) {
 			// 	console.log(i[1])
 			// })
 			trainNetwork();
+
+			testNetwork(TestData);
 			// console.log('not saving network for the moment because of size');
 			saveNetwork();
-			testNetwork(TestData);
+
+			// console.log('\nload new data and train again\n');
+			// loadDBData();
+			// trainingSet = [];
+			// imagesToTrainingSet(DBdata).then(function() {
+			// 		trainNetwork();
+			// 		testNetwork(TestData);
+			// 		console.log('not saving network for the moment because of size');
+			// 	})
 			// });
 		});
 	}
 });
+
+
 
 function loadDBData() {
 	DBdata = helpers.loadDatabase(DB_NAME);
@@ -230,6 +240,12 @@ function testNetwork(test_array) {
 
 			var testedSuccess = 0;
 			var totalTestError = 0;
+			var wrong = {
+				'nohand': 0,
+				'left': 0,
+				'center': 0,
+				'right': 0
+			}
 
 			console.log('Results (rounded), OptimalResults, Difference, Image name, Accepted as success?');
 			testedSet.forEach(function(testedImg) {
@@ -244,16 +260,25 @@ function testNetwork(test_array) {
 					console.log('' + res + '   ' + testedImg.optimalValues + '    ' + testedImg.error + '   ' + testedImg.imageName + '   ' + (testedImg.success ? ' OK' : ''));
 					// copy to records_wrong/ for inspection
 					// fs.createReadStream('records/' + testedImg.imageName).pipe(fs.createWriteStream('records_wrong/' + testedImg.imageName));
+					var op = testedImg.optimalValues;
+					if (op[0] == 0 && op[1] == 0 && op[2] == 0) wrong.nohand++;
+					else {
+						if (op.max() == op[0]) wrong.left++;
+						if (op.max() == op[1]) wrong.center++;
+						if (op.max() == op[2]) wrong.right++;
+					}
 				}
 
 				if (testedImg.success) testedSuccess++;
 				totalTestError += testedImg.error;
 			});
 
-			var summary = PIXEL_DIVIDER + ', ' + INPUT_LAYER + '/' + HIDDEN_LAYER + ', ' + MARGIN_DIVIDER + ', ' + DESIRED_ERROR + '   success: ' + testedSuccess + ' / ' + testedSet.length + '  ,  ' + Math.round(testedSuccess / testedSet.length * 100) + ' %  (avg. err: ' + Math.round(totalTestError / testedSet.length * 10) / 10 + '), FANN';
+			var summary = NUMBER_DB_DATA + ', ' + INPUT_LAYER + '/' + HIDDEN_LAYER + ', ' + MAX_EPOCHS + ', ' + DESIRED_ERROR + '   success: ' + testedSuccess + ' / ' + testedSet.length + '  ,  ' + Math.round(testedSuccess / testedSet.length * 100) + ' %  (avg. err: ' + Math.round(totalTestError / testedSet.length * 10) / 10 + '), FANN';
 			// var summary = 's'+ SECTOR_WIDTH + ', ' + INPUT_LAYER + '/' + HIDDEN_LAYER + ', ' + MARGIN_DIVIDER + ', ' + DESIRED_ERROR + '   success: ' + testedSuccess + ' / ' + testedSet.length + '  ,  ' + Math.round(testedSuccess / testedSet.length * 100) + ' %  (avg. err: ' + Math.round(totalTestError / testedSet.length * 10) / 10 + '), FANN';
 			console.log('\nPixel divider, Input, Hidden, Margin, desired error');
 			console.log(summary);
+
+			console.log('wrong images: ' + JSON.stringify(wrong));
 
 			var t = new Date();
 			console.log('\ntime now: ' + t.toGMTString());
