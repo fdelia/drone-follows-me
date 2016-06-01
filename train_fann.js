@@ -1,18 +1,18 @@
 const MARGIN_DIVIDER = 0; // auch in follow_hand.js anpassen!
 // const SECTOR_WIDTH = 32;
 
-const PIXEL_DIVIDER = 2; // früher "TEILER", auch in follow_hand.js anpassen!
-const INPUT_LAYER = 166848;
-const HIDDEN_LAYER = 1000;
-const DESIRED_ERROR = 0.1; // high error to avoid overfitting?
+const PIXEL_DIVIDER = 1; // früher "TEILER", auch in follow_hand.js anpassen!
+const INPUT_LAYER = 4770;
+const HIDDEN_LAYER = 600;
+const DESIRED_ERROR = 0.01; // high error to avoid overfitting?
 
 const DB_NAME = 'database.csv';
 const TRAINING_DATA_NAME = 'saves/trainingData_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '.json';
 const NETWORK_NAME = 'saves/nn' + '_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_e' + DESIRED_ERROR + '.json';
 
-const NUMBER_DB_DATA = 400;
-const MAX_EPOCHS = 1;
-const LEARNING_RATE = 0.3;
+const NUMBER_DB_DATA = 1000;
+const MAX_EPOCHS = 100;
+const LEARNING_RATE = 0.2;
 
 // const TRAINING_DATA_NAME = 'saves/trainingData_s' + SECTOR_WIDTH + '_m' + MARGIN_DIVIDER + '.json';
 // const NETWORK_NAME = 'saves/nn' + '_s' + SECTOR_WIDTH + '_m' + MARGIN_DIVIDER + '_in' + INPUT_LAYER + '_h' + HIDDEN_LAYER + '_e' + DESIRED_ERROR + '.json';
@@ -36,10 +36,12 @@ console.log('time now: ' + t.toGMTString());
 // add pruning
 
 
+var DBdata = [],
+	TestData = [];
 var trainingSet = [];
 var testedSet = [];
-// var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3); // input, hidden (...), output layer
-var net = new fann.load(NETWORK_NAME);
+var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3); // input, hidden (...), output layer
+// var net = new fann.load(NETWORK_NAME);
 
 net.learning_rate = LEARNING_RATE;
 console.log('neural network initialized\n ');
@@ -47,12 +49,6 @@ var t = new Date();
 console.log('time now: ' + t.toGMTString());
 
 
-var DBdata = helpers.loadDatabase(DB_NAME);
-DBdata = shuffle(DBdata); // we want to have different test data every time
-if (NUMBER_DB_DATA < DBdata.length) DBdata = DBdata.splice(-NUMBER_DB_DATA);
-console.log('working with ' + DBdata.length + ' rows in total');
-var TestData = DBdata.splice(-1 * Math.round(DBdata.length / 4));
-console.log('test rows spliced: ' + TestData.length + ', rest is training data');
 
 // load training data if it exists for this configs
 fs.access(TRAINING_DATA_NAME, fs.F_OK, function(err) {
@@ -67,26 +63,13 @@ fs.access(TRAINING_DATA_NAME, fs.F_OK, function(err) {
 			testNetwork(TestData);
 		});
 	} else {
-		if (true) {
-			DBdata = shuffle(DBdata);
-			console.log('shuffle shuffle db data, hm hm hm');
-		}
+		// if (true) {
+		// 	DBdata = shuffle(DBdata);
+		// 	console.log('shuffle shuffle db data, hm hm hm');
+		// }
 		// load images to training set
-		imagesToTrainingSet(DBdata);
-	}
-});
-
-
-function imagesToTrainingSet(db_array) {
-	if (db_array.length % 100 == 0) console.log('   ' + db_array.length + ' images left to add');
-	var row = db_array.shift();
-	var outputValues = getOutputValues(row);
-	var p1 = addImage(row[0], outputValues);
-
-	p1.then(function() {
-		if (db_array.length > 0)
-			imagesToTrainingSet(db_array);
-		else {
+		loadDBData()
+		imagesToTrainingSet(DBdata).then(function() {
 			// save new training data
 			console.log('Training data will not be saved for the moment (it\'s too big)');
 			// var p1 = saveTrainingData();
@@ -100,8 +83,55 @@ function imagesToTrainingSet(db_array) {
 			saveNetwork();
 			testNetwork(TestData);
 			// });
-		}
+		});
+	}
+});
+
+function loadDBData() {
+	DBdata = helpers.loadDatabase(DB_NAME);
+	DBdata = shuffle(DBdata); // we want to have different test data every time
+	if (NUMBER_DB_DATA < DBdata.length) DBdata = DBdata.splice(-NUMBER_DB_DATA);
+	console.log('working with ' + DBdata.length + ' rows in total');
+	TestData = DBdata.splice(-1 * Math.round(DBdata.length / 4));
+	console.log('test rows spliced: ' + TestData.length + ', rest is training data');
+
+}
+
+
+function imagesToTrainingSet(db_array) {
+	if (db_array.length % 100 == 0) console.log('   ' + db_array.length + ' images left to add');
+	var row = db_array.shift();
+	var outputValues = getOutputValues(row);
+	var p1 = addImage(row[0], outputValues);
+
+	var promise = new Promise(function(resolve, reject) {
+		p1.then(function() {
+			if (db_array.length > 0)
+				imagesToTrainingSet(db_array).then(function() {
+					resolve();
+				});
+			else {
+				resolve();
+				// // save new training data
+				// console.log('Training data will not be saved for the moment (it\'s too big)');
+				// // var p1 = saveTrainingData();
+				// // p1.then(function() {
+				// console.log('start training');
+				// // trainingSet.map(function(i){
+				// // 	console.log(i[1])
+				// // })
+				// trainNetwork();
+				// // console.log('not saving network for the moment because of size');
+				// saveNetwork();
+				// testNetwork(TestData);
+				// // });
+			}
+		});
+
 	});
+
+
+	return promise;
 }
 
 // function getOutputValues(row) {
@@ -213,7 +243,7 @@ function testNetwork(test_array) {
 				if (!testedImg.success) {
 					console.log('' + res + '   ' + testedImg.optimalValues + '    ' + testedImg.error + '   ' + testedImg.imageName + '   ' + (testedImg.success ? ' OK' : ''));
 					// copy to records_wrong/ for inspection
-					fs.createReadStream('records/' + testedImg.imageName).pipe(fs.createWriteStream('records_wrong/' + testedImg.imageName));
+					// fs.createReadStream('records/' + testedImg.imageName).pipe(fs.createWriteStream('records_wrong/' + testedImg.imageName));
 				}
 
 				if (testedImg.success) testedSuccess++;

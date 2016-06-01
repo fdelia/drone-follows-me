@@ -28,52 +28,52 @@ Obj.loadDatabase = function(dbName) {
 	return data;
 }
 
-Obj.getSectors = function(pixels, sectorWidth, imageWidth, imageHeight) {
-	var sectorsInHeight = Math.floor(imageHeight / sectorWidth);
-	var sectorsInWidth = Math.floor(imageWidth / sectorWidth);
-	var sectors = [],
-		sectorPixels = [];
-	var xStart = 0,
-		yStart = 0;
+// Obj.getSectors = function(pixels, sectorWidth, imageWidth, imageHeight) {
+// 	var sectorsInHeight = Math.floor(imageHeight / sectorWidth);
+// 	var sectorsInWidth = Math.floor(imageWidth / sectorWidth);
+// 	var sectors = [],
+// 		sectorPixels = [];
+// 	var xStart = 0,
+// 		yStart = 0;
 
-	for (var i = 0; i < sectorsInWidth; i++) {
-		for (var j = 0; j < sectorsInHeight; j++) {
-			xStart = i * sectorWidth;
-			yStart = j * sectorWidth;
-			// console.log('sector ' + xStart + '/' + yStart + ' , w: ' + sectorWidth);
+// 	for (var i = 0; i < sectorsInWidth; i++) {
+// 		for (var j = 0; j < sectorsInHeight; j++) {
+// 			xStart = i * sectorWidth;
+// 			yStart = j * sectorWidth;
+// 			// console.log('sector ' + xStart + '/' + yStart + ' , w: ' + sectorWidth);
 
-			// do this two sectors
+// 			// do this two sectors
 
-			sectorPixels = []
-			for (var x = xStart; x < xStart + sectorWidth; x++) {
-				for (var y = yStart; y < yStart + sectorWidth; y++) {
-					var idx = (imageWidth * y + x);
-					// if (pixels[idx] !== undefined) // TODO
-					sectorPixels.push(pixels[imageWidth * y + x]);
+// 			sectorPixels = []
+// 			for (var x = xStart; x < xStart + sectorWidth; x++) {
+// 				for (var y = yStart; y < yStart + sectorWidth; y++) {
+// 					var idx = (imageWidth * y + x);
+// 					// if (pixels[idx] !== undefined) // TODO
+// 					sectorPixels.push(pixels[imageWidth * y + x]);
 
-				}
-			}
-			sectors.push((this.average(sectorPixels)));
+// 				}
+// 			}
+// 			sectors.push((this.average(sectorPixels)));
 
-			// shifted sectors
-			// xStart += Math.floor(sectorWidth);
-			// yStart += Math.floor(sectorWidth);
+// 			// shifted sectors
+// 			// xStart += Math.floor(sectorWidth);
+// 			// yStart += Math.floor(sectorWidth);
 
-			// sectorPixels = []
-			// for (var x = xStart; x < xStart + sectorWidth; x++) {
-			// 	for (var y = yStart; y < yStart + sectorWidth; y++) {
-			// 		var idx = (imageWidth * y + x);
-			// 		sectorPixels.push(pixels[imageWidth * y + x]);
+// 			// sectorPixels = []
+// 			// for (var x = xStart; x < xStart + sectorWidth; x++) {
+// 			// 	for (var y = yStart; y < yStart + sectorWidth; y++) {
+// 			// 		var idx = (imageWidth * y + x);
+// 			// 		sectorPixels.push(pixels[imageWidth * y + x]);
 
-			// 	}
-			// }
-			// sectors.push((this.average(sectorPixels)));
+// 			// 	}
+// 			// }
+// 			// sectors.push((this.average(sectorPixels)));
 
-		}
-	}
+// 		}
+// 	}
 
-	return sectors;
-}
+// 	return sectors;
+// }
 
 // Obj.checkIfNumber = function(n) {
 // 	if (isNaN(n)) console.log('found NaN, leave out');
@@ -81,51 +81,132 @@ Obj.getSectors = function(pixels, sectorWidth, imageWidth, imageHeight) {
 // }
 
 
+// Obj.getInputData = function(self, pixelDivider) {
+// 	var newData = [];
+// 	// var pixels = [];
+
+// 	// cut some margin out
+// 	// if (marginDivider) var margin = Math.round(self.height / marginDivider);
+// 	// else margin = 0;
+
+// 	var margin = 4; // because of average
+
+// 	var xPart = Math.round((self.width - margin) / 6);
+// 	var r = 0,
+// 		g = 0,
+// 		b = 0;
+
+// 	for (var y = margin; y < self.height - margin; y++) {
+// 		for (var x = margin; x < self.width - margin; x++) {
+// 			var idx = (self.width * y + x) << 2;
+
+// 			function dt(idx_diff) {
+// 				return self.data[idx + idx_diff];
+// 			}
+
+// 			if (x % xPart == 0) {
+// 				newData.push(r);
+// 				newData.push(g);
+// 				newData.push(b);
+
+// 				r = 0;
+// 				g = 0;
+// 				b = 0;
+// 			} else {
+// 				r += dt(0);
+// 				g += dt(1);
+// 				b += dt(2);
+// 			}
+
+
+// 			// if (x % pixelDivider == 0 && y % pixelDivider == 0) {
+// 			// 	function dt(idx_diff) {
+// 			// 		return self.data[idx + idx_diff];
+// 			// 	}
+
+// 			// 	// var r = (self.data[idx - 4] + self.data[idx + 0] + self.data[idx + 4]) / 3;
+// 			// 	var r = (dt(-4) + dt(+0) + dt(+4)) / 3;
+// 			// 	r += (dt(-self.width - 4) + dt(-self.width + 0) + dt(-self.width + 4)) / 3;
+// 			// 	r += (dt(+self.width - 4) + dt(+self.width + 0) + dt(+self.width + 4)) / 3;
+// 			// 	r /= 3;
+// 			// 	var g = (self.data[idx - 3] + self.data[idx + 1] + self.data[idx + 5]) / 3;
+// 			// 	g += (dt(-self.width - 3) + dt(-self.width + 1) + dt(-self.width + 5)) / 3;
+// 			// 	g += (dt(+self.width - 3) + dt(+self.width + 1) + dt(+self.width + 5)) / 3;
+// 			// 	g /= 3;
+// 			// 	var b = (self.data[idx - 2] + self.data[idx + 2] + self.data[idx + 6]) / 3;
+// 			// 	b += (dt(-self.width - 2) + dt(-self.width + 2) + dt(-self.width + 6)) / 3;
+// 			// 	b += (dt(+self.width - 2) + dt(+self.width + 2) + dt(+self.width + 6)) / 3;
+// 			// 	b /= 3;
+
+// 			// 	newData.push(r);
+// 			// 	newData.push(g);
+// 			// 	newData.push(b);
+
+
+// 			// 	// newData.push(self.data[idx]);
+// 			// 	// newData.push(self.data[idx + 1]);
+// 			// 	// newData.push(self.data[idx + 2]);
+
+// 			// 	// newData.push((toInterval(self.data[idx]) + toInterval(self.data[idx + 1]) + toInterval(self.data[idx + 2])) / 3)
+// 			// 	// newData.push(Math.round((self.data[idx] + self.data[idx + 1] + self.data[idx + 2]) / 3));
+// 			// }
+// 		}
+// 	}
+
+// 	// self.pack().pipe(fs.createWriteStream('out.png'));
+// 	return newData;
+// }
+
 Obj.getInputData = function(self, pixelDivider) {
 	var newData = [];
-	var pixels = [];
+	// var pixels = [];
 
 	// cut some margin out
 	// if (marginDivider) var margin = Math.round(self.height / marginDivider);
 	// else margin = 0;
 
 	var margin = 4; // because of average
+	var r, g, b;
+	const AVG_LINES = 12
+	const AVG_COLS = 12
 
-	for (var y = margin; y < self.height - margin; y++) {
-		for (var x = margin; x < self.width - margin; x++) {
+	for (var y = margin; y < self.height - margin; y += AVG_LINES) {
+		for (var x = margin; x < self.width - margin; x += AVG_COLS) {
 			var idx = (self.width * y + x) << 2;
 
-			if (x % pixelDivider == 0 && y % pixelDivider == 0) {
-				function dt(idx_diff) {
-					return self.data[idx + idx_diff];
-				}
-
-				// var r = (self.data[idx - 4] + self.data[idx + 0] + self.data[idx + 4]) / 3;
-				var r = (dt(-4) + dt(+0) + dt(+4)) / 3;
-				r += (dt(-self.width - 4) + dt(-self.width + 0) + dt(-self.width + 4)) / 3;
-				r += (dt(+self.width - 4) + dt(+self.width + 0) + dt(+self.width + 4)) / 3;
-				r /= 3;
-				var g = (self.data[idx - 3] + self.data[idx + 1] + self.data[idx + 5]) / 3;
-				g += (dt(-self.width - 3) + dt(-self.width + 1) + dt(-self.width + 5)) / 3;
-				g += (dt(+self.width - 3) + dt(+self.width + 1) + dt(+self.width + 5)) / 3;
-				g /= 3;
-				var b = (self.data[idx - 2] + self.data[idx + 2] + self.data[idx + 6]) / 3;
-				b += (dt(-self.width - 2) + dt(-self.width + 2) + dt(-self.width + 6)) / 3;
-				b += (dt(+self.width - 2) + dt(+self.width + 2) + dt(+self.width + 6)) / 3;
-				b /= 3;
-
-				newData.push(r);
-				newData.push(g);
-				newData.push(b);
-
-
-				// newData.push(self.data[idx]);
-				// newData.push(self.data[idx + 1]);
-				// newData.push(self.data[idx + 2]);
-
-				// newData.push((toInterval(self.data[idx]) + toInterval(self.data[idx + 1]) + toInterval(self.data[idx + 2])) / 3)
-				// newData.push(Math.round((self.data[idx] + self.data[idx + 1] + self.data[idx + 2]) / 3));
+			function dt(idx_diff) {
+				return self.data[idx + idx_diff];
 			}
+
+
+			newData.push(dt(0))
+			newData.push(dt(1))
+			newData.push(dt(2))
+
+
+			// r = 0
+			// g = 0
+			// b = 0
+			// for (var j = 0; j < AVG_LINES; j++) {
+			// 	for (var k = 0; k < AVG_COLS; k++) {
+			// 		r += dt(k + j * self.width * 4)
+			// 		g += dt(k + 1 + j * self.width * 4)
+			// 		b += dt(k + 2 + j * self.width * 4)
+			// 	}
+
+			// 	r /= AVG_COLS
+			// 	g /= AVG_COLS
+			// 	b /= AVG_COLS
+			// }
+
+			// r /= AVG_LINES
+			// g /= AVG_LINES
+			// b /= AVG_LINES
+
+			// newData.push(r)
+			// newData.push(g)
+			// newData.push(b)
+
 		}
 	}
 
@@ -199,7 +280,7 @@ Obj.standardizeData = function(data) {
 	// var avg = this.average(data);
 	var avg = 128;
 	for (var i = 0; i < data.length; i++) {
-		data[i] = (data[i] - avg) / 255;
+		data[i] = (data[i] - avg) / 128; // xxx added / 90
 	}
 	return data;
 }
