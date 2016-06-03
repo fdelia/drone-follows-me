@@ -297,5 +297,11 @@ Array.prototype.max = function() {
 };
 
 
+Obj.isMax = function(array) {
+	for (var i = 0; i < array.length; i++)
+		if (array[i] == Math.max.apply(null, array)) return i;
+	return false;
+}
+
 
 module.exports = Obj;
