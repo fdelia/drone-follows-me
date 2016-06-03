@@ -1,4 +1,4 @@
-const NUMBER_DB_DATA = 3300;
+const NUMBER_DB_DATA = 300;
 const MAX_EPOCHS = 100
 
 const AVG_LINES = 1
@@ -33,9 +33,10 @@ adadelta ~60%
 sgd 65%, sometimes 70%+
 adagrad 50%
 
-with an additional hidden layer:
-adadelta 
-
+with the additional hidden layer + pool:
+adadelta ~65% fluctuant
+sgd 60%
+adagrad 
 
 */
 
@@ -123,12 +124,13 @@ loadImages(DBdata).then(function() {
 	var stats;
 	for (var e = 0; e < MAX_EPOCHS; e++) {
 		console.log('epoch: ' + (e + 1) + ' of ' + MAX_EPOCHS)
+		ImageData = shuffle(ImageData)
 
 		for (var i = 0; i < ImageData.length; i++) {
 			var x = ImageData[i][0];
 			stats = trainer.train(x, ImageData[i][1]);
 			if ((i + 1) % 100 == 0 && i > 0) console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images done')
-			if (i % 500 == 0 && i > 0) testNetwork();
+			if (i % 1000 == 0 && i > 0) testNetwork();
 		}
 
 		// console.log(stats);
