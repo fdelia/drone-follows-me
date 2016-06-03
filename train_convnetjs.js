@@ -1,10 +1,12 @@
 const MARGIN_DIVIDER = 0; // obsolete auch in follow_hand.js anpassen!
 const PIXEL_DIVIDER = 1; // obsolete früher "TEILER", auch in follow_hand.js anpassen!
 
-const NUMBER_DB_DATA = 200;
+const NUMBER_DB_DATA = 320;
+const MAX_EPOCHS = 10
 
-const AVG_LINES = 8
-const AVG_COLS = 8
+const AVG_LINES = 10
+const AVG_COLS = 10
+
 
 
 // const INPUT_LAYER = 4770;
@@ -116,12 +118,12 @@ layer_defs.push({
 	sx: 2,
 	stride: 2
 });
-layer_defs.push({
-	type: 'softmax',
-	num_classes: 2
-});
+// layer_defs.push({
+// 	type: 'softmax',
+// 	num_classes: 4
+// });
 
-// layer_defs.push({type:'regression', num_neurons: 3});
+layer_defs.push({type:'regression', num_neurons: 3});
 
 net = new convnetjs.Net();
 net.makeLayers(layer_defs);
@@ -129,12 +131,13 @@ var trainer = new convnetjs.Trainer(net, {
 	method: 'adadelta',
 	// l1_decay: 0.001,
 	l2_decay: 0.0001,
-	batch_size: 4,
-	learning_rate: 0.1 // 0.01
+	batch_size: 4
+	// learning_rate: 0.1 // 0.01
 	// momentum: 0.9
 });
 
 loadDB()
+console.log('load image data')
 loadImages(DBdata).then(function() {
 	TestData = ImageData.splice(-1 * Math.round(ImageData.length / 4))
 		// console.log(ImageData[0])
@@ -142,29 +145,55 @@ loadImages(DBdata).then(function() {
 
 	console.log('\nstart training')
 	var stats;
-	for (var e = 0; e < 10; e++) {
-		console.log('epoch: ' + (e + 1))
+	for (var e = 0; e < MAX_EPOCHS; e++) {
+		console.log('epoch: ' + (e + 1) + ' of '+ MAX_EPOCHS)
 
 		for (var i = 0; i < ImageData.length; i++) {
 			var x = ImageData[i][0];
 			stats = trainer.train(x, ImageData[i][1]);
-			if ((i + 1) % 10 == 0 && i > 0) console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images')
+			if ((i + 1) % 100 == 0 && i > 0) console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images')
 		}
 
 		// console.log(stats);
 	}
 
 	console.log('\nstart testing')
-	var wrongCounter = 0;
+	var wrongCounter = 0; var correctClassCounter = [0,0,0,0]; var totalClassCounter = [0,0,0,0]
 	for (var i = 0; i < TestData.length; i++) {
 		var res = net.forward(TestData[i][0])
-		if (TestData[i][1] != isMax(res.w)) wrongCounter++;
-		var classIsMax = TestData[i][1] == isMax(res.w) ? 'Yes' : 'No'
+		var classIsMax = '';
+
+		// linear regression part
+		var err = Math.abs(res.w[0] - TestData[i][1][0])
+		err += Math.abs(res.w[1] - TestData[i][1][1])
+		err += Math.abs(res.w[2] - TestData[i][1][2])
+		if (TestData[i][1] != [0,0,0] && (isMax(TestData[i][1]) != isMax(res.w) || err > 0.8)){
+			wrongCounter++;
+			classIsMax = 'no';
+		} else if (TestData[i][1] == [0,0,0] && err > 0.4){
+			wrongCounter++;
+			classIsMax = 'no';
+		} else {
+			classIsMax = 'yes';
+			correctClassCounter[isMax(TestData[i][1])]++;
+		}
+		totalClassCounter[isMax(TestData[i][1])]++;
+
+		// classes part
+		// if (TestData[i][1] != isMax(res.w)) wrongCounter++;
+		// if (TestData[i][1] == isMax(res.w)) correctClassCounter[TestData[i][1]]++;
+		// totalClassCounter[TestData[i][1]]++;
+		// var classIsMax = TestData[i][1] == isMax(res.w) ? 'Yes' : 'No'
+
 			// console.log('class: ' + TestData[i][1] + ' score: ' + res.w[TestData[i][1]] + ' isMax: ' + classIsMax + '   ' + JSON.stringify(res.w))
-		console.log('class: ' + TestData[i][1] + '  isMax: ' + classIsMax + '   ' + JSON.stringify(res.w))
+		console.log('correct: ' + classIsMax + '  expected: ' + TestData[i][1] + '   ' + JSON.stringify(res.w))
 	}
 
 	console.log('Success: ' + Math.round((1 - wrongCounter / TestData.length) * 100) + ' %')
+
+	for (var i=0; i<4;i++){
+		console.log(' class total correct: '+ Math.round(correctClassCounter[i] / totalClassCounter[i] * 100)+' %')
+	}
 
 
 
@@ -181,10 +210,10 @@ function loadDB() {
 
 
 function loadImages(db_array) {
-	if (db_array.length % 100 == 0) console.log('   ' + db_array.length + ' images left to add');
+	if (db_array.length % 100 == 0) console.log('   ' + db_array.length + ' images left');
 	var row = db_array.shift();
-	var p1 = loadImage(row[0], getClass(row));
-	// var p1 = loadImage(row[0], getOutputValues(row));
+	// var p1 = loadImage(row[0], getClass(row));
+	var p1 = loadImage(row[0], getOutputValues(row));
 
 	var promise = new Promise(function(resolve, reject) {
 		p1.then(function() {
@@ -203,18 +232,18 @@ function loadImages(db_array) {
 }
 
 
+function getClass(row) {
+	if (row[1] == -1) return 0; // no hand
+	// else return 1;
+	if (row[1] <= 213) return 1; // left
+	if (row[1] <= 426) return 2; // center
+	return 3; // right
+}
+
 // function getClass(row) {
 // 	if (row[1] == -1) return 0;
-// 	// else return 1;
-// 	if (row[1] <= 213) return 1;
-// 	if (row[1] <= 426) return 2;
-// 	return 3;
+// 	else return 1;
 // }
-
-function getClass(row) {
-	if (row[1] == -1) return 0;
-	else return 1;
-}
 
 function getOutputValues(row) {
 	if (row[1] == -1) return [0, 0, 0];
@@ -272,13 +301,11 @@ function getInputData(data) {
 	var x = new convnetjs.Vol(640 / AVG_COLS, 320 / AVG_LINES, 3)
 
 	for (var dc = 0; dc < 3; dc++) {
-		// var i = 0;
 		for (var xc = 0; xc < 640; xc+=AVG_LINES) {
 			for (var yc = 0; yc < 320; yc+=AVG_COLS) {
 				// var ix = ((W * k) + i) * 4 + dc;
 				var ix = (640 * yc + xc) * 4 + dc;
 				x.set(yc, xc, dc, data[ix] / 255.0 - 0.5);
-				// i++;
 			}
 		}
 	}
