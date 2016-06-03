@@ -1,7 +1,7 @@
 const MARGIN_DIVIDER = 0; // obsolete auch in follow_hand.js anpassen!
 const PIXEL_DIVIDER = 1; // obsolete früher "TEILER", auch in follow_hand.js anpassen!
 
-const NUMBER_DB_DATA = 320;
+const NUMBER_DB_DATA = 100;
 const MAX_EPOCHS = 10
 
 const AVG_LINES = 10
@@ -151,12 +151,21 @@ loadImages(DBdata).then(function() {
 		for (var i = 0; i < ImageData.length; i++) {
 			var x = ImageData[i][0];
 			stats = trainer.train(x, ImageData[i][1]);
-			if ((i + 1) % 100 == 0 && i > 0) console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images')
+			if ((i + 1) % 100 == 0 && i > 0) console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images done')
 		}
 
 		// console.log(stats);
+		if (e % 1 == 0)
+			testNetwork();
 	}
 
+	
+
+
+
+});
+
+function testNetwork(){
 	console.log('\nstart testing')
 	var wrongCounter = 0; var correctClassCounter = [0,0,0,0]; var totalClassCounter = [0,0,0,0]
 	for (var i = 0; i < TestData.length; i++) {
@@ -167,7 +176,7 @@ loadImages(DBdata).then(function() {
 		var err = Math.abs(res.w[0] - TestData[i][1][0])
 		err += Math.abs(res.w[1] - TestData[i][1][1])
 		err += Math.abs(res.w[2] - TestData[i][1][2])
-		if (TestData[i][1] != [0,0,0] && (isMax(TestData[i][1]) != isMax(res.w) || err > 0.8)){
+		if (TestData[i][1].toString() != [0,0,0].toString() && (isMax(TestData[i][1]) != isMax(res.w) || err > 0.8)){
 			wrongCounter++;
 			classIsMax = 'no';
 		} else if (TestData[i][1] == [0,0,0] && err > 0.4){
@@ -175,9 +184,12 @@ loadImages(DBdata).then(function() {
 			classIsMax = 'no';
 		} else {
 			classIsMax = 'yes';
-			correctClassCounter[isMax(TestData[i][1])]++;
+			if (TestData[i][1].toString() != [0,0,0].toString()) correctClassCounter[isMax(TestData[i][1])]++;
+			else correctClassCounter[3]++;
 		}
-		totalClassCounter[isMax(TestData[i][1])]++;
+		if (TestData[i][1].toString() != [0,0,0].toString()) totalClassCounter[isMax(TestData[i][1])]++;
+		else totalClassCounter[3]++;
+		console.log(totalClassCounter)
 
 		// classes part
 		// if (TestData[i][1] != isMax(res.w)) wrongCounter++;
@@ -186,7 +198,7 @@ loadImages(DBdata).then(function() {
 		// var classIsMax = TestData[i][1] == isMax(res.w) ? 'Yes' : 'No'
 
 			// console.log('class: ' + TestData[i][1] + ' score: ' + res.w[TestData[i][1]] + ' isMax: ' + classIsMax + '   ' + JSON.stringify(res.w))
-		console.log('correct: ' + classIsMax + '  expected: ' + TestData[i][1] + '   ' + JSON.stringify(res.w))
+		console.log('correct: ' + classIsMax + '  expected: ' + roundArray(TestData[i][1]) + '   ' + JSON.stringify(res.w))
 	}
 
 	console.log('Success: ' + Math.round((1 - wrongCounter / TestData.length) * 100) + ' %')
@@ -195,11 +207,7 @@ loadImages(DBdata).then(function() {
 		console.log(' class total correct: '+ Math.round(correctClassCounter[i] / totalClassCounter[i] * 100)+' %')
 	}
 
-
-
-	process.exit(0)
-
-});
+}
 
 
 function loadDB() {
@@ -329,6 +337,13 @@ function isMax(array) {
 	for (var i = 0; i < array.length; i++)
 		if (array[i] == Math.max.apply(null, array)) return i;
 	return false;
+}
+
+function roundArray(array){
+	var newArray = [];
+	for (var i=0; i< array.length; i++)
+		newArray.push(Math.round(array[i] * 100) / 100)
+	return newArray
 }
 
 
