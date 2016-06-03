@@ -4,10 +4,10 @@ const PIXEL_DIVIDER = 1; // obsolete früher "TEILER", auch in follow_hand.js an
 const NUMBER_DB_DATA = 1000;
 
 const INPUT_LAYER = 4770;
-const HIDDEN_LAYER = 300;
-const DESIRED_ERROR = 0.03; // high error to avoid overfitting?
+const HIDDEN_LAYER = 50;
+const DESIRED_ERROR = 0.01; // high error to avoid overfitting?
 const MAX_EPOCHS = 100;
-const LEARNING_RATE = 0.2;
+const LEARNING_RATE = 0.01;
 
 const DB_NAME = 'database.csv';
 const TRAINING_DATA_NAME = 'saves/trainingData_p' + PIXEL_DIVIDER + '_m' + MARGIN_DIVIDER + '.json';
@@ -39,9 +39,13 @@ var DBdata = [],
 var trainingSet = [];
 var testedSet = [];
 var net = new fann.standard(INPUT_LAYER, HIDDEN_LAYER, 3); // input, hidden (...), output layer
+// net.activation_function_hidden('elliot')
+// net.activation_function_output('elliot')
+// net.training_algorithm = 'sarprop'
+net.learning_rate = LEARNING_RATE;
+net.learning_momentum = 0.9;
 // var net = new fann.load(NETWORK_NAME);
 
-net.learning_rate = LEARNING_RATE;
 console.log('neural network initialized\n ');
 var t = new Date();
 console.log('time now: ' + t.toGMTString());

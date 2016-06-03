@@ -165,10 +165,10 @@ Obj.getInputData = function(self, pixelDivider) {
 	// if (marginDivider) var margin = Math.round(self.height / marginDivider);
 	// else margin = 0;
 
-	var margin = 4; // because of average
+	var margin = 0; // because of average
 	var r, g, b;
-	const AVG_LINES = 12
-	const AVG_COLS = 12
+	const AVG_LINES = 8
+	const AVG_COLS = 8
 
 	for (var y = margin; y < self.height - margin; y += AVG_LINES) {
 		for (var x = margin; x < self.width - margin; x += AVG_COLS) {
@@ -279,8 +279,9 @@ Obj.getInputDataFromImage = function(imageName, PIXEL_DIVIDER) {
 Obj.standardizeData = function(data) {
 	// var avg = this.average(data);
 	var avg = 128;
+	// var avg = 0;
 	for (var i = 0; i < data.length; i++) {
-		data[i] = (data[i] - avg) / 128; // xxx added / 90
+		data[i] = (data[i] - avg) / 128;
 	}
 	return data;
 }
