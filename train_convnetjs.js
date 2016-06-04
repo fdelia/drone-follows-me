@@ -1,5 +1,5 @@
 const NUMBER_DB_DATA = 4499;
-const MAX_EPOCHS = 10
+const MAX_EPOCHS = 30
 
 const AVG_LINES = 1
 const AVG_COLS = 1
@@ -34,11 +34,11 @@ sgd 65%, sometimes 70%+
 adagrad 50%
 
 with the all conv layers + pools:
-adadelta ~65% fluctuant ... 70%
+adadelta ~65% fluctuant ... 70% 
 sgd 60%
 
 with 2conv & fc-30 layer at the end:
-adadelta 70% at epoch 3
+adadelta 70% at epoch 3 ... 75% at 6
 
 with 3conv & fc-30 layer at the end:
 adadelta 70%
@@ -56,8 +56,27 @@ layer_defs.push({
 layer_defs.push({
 	type: 'conv',
 	sx: 5,
-	filters: 16, // 16
-	stride: 1,	
+	filters: 20, // 16
+	stride: 1,
+	pad: 2,
+	activation: 'relu'
+});
+layer_defs.push({
+	type: 'pool',
+	sx: 2,
+	stride: 2
+});
+layer_defs.push({
+	type: 'fc',
+	num_neurons: 30,
+	activation: 'relu'
+});
+
+layer_defs.push({
+	type: 'conv',
+	sx: 5,
+	filters: 20,
+	stride: 1,
 	pad: 2,
 	activation: 'relu'
 });
@@ -79,20 +98,6 @@ layer_defs.push({
 	sx: 2,
 	stride: 2
 });
-// layer_defs.push({
-// 	type: 'conv',
-// 	sx: 5,
-// 	filters: 20,
-// 	stride: 1,
-// 	pad: 2,
-// 	activation: 'relu'
-// });
-// layer_defs.push({
-// 	type: 'pool',
-// 	sx: 2,
-// 	stride: 2
-// });
-layer_defs.push({type:'fc', num_neurons:30, activation:'relu'});
 if (REGRESSION_OUTPUT)
 	layer_defs.push({
 		type: 'regression',
@@ -167,18 +172,18 @@ function testNetwork() {
 			var err = Math.abs(res.w[0] - TestData[i][1][0])
 			err += Math.abs(res.w[1] - TestData[i][1][1])
 			err += Math.abs(res.w[2] - TestData[i][1][2])
-			if (TestData[i][1].toString() != [0, 0, 0].toString() && (isMax(TestData[i][1]) != isMax(res.w) || err > 1)) {
+			if (! isZeroArray(TestData[i][1]) && (isMax(TestData[i][1]) != isMax(res.w) || err > 1)) {
 				wrongCounter++;
 				classIsMax = 'no';
-			} else if (TestData[i][1].toString() == [0, 0, 0].toString() && err > 0.4) {
+			} else if (isZeroArray(TestData[i][1]) && err > 0.4) {
 				wrongCounter++;
 				classIsMax = 'no';
 			} else {
 				classIsMax = 'yes';
-				if (TestData[i][1].toString() != [0, 0, 0].toString()) correctClassCounter[isMax(TestData[i][1])]++;
+				if (! isZeroArray(TestData[i][1])) correctClassCounter[isMax(TestData[i][1])]++;
 				else correctClassCounter[3]++;
 			}
-			if (TestData[i][1].toString() != [0, 0, 0].toString()) totalClassCounter[isMax(TestData[i][1])]++;
+			if (! isZeroArray(TestData[i][1])) totalClassCounter[isMax(TestData[i][1])]++;
 			else totalClassCounter[3]++;
 			// console.log('corr: ' + classIsMax + '  exp: ' + roundArray(TestData[i][1]) + '   ' + JSON.stringify(res.w))
 		}
@@ -196,7 +201,7 @@ function testNetwork() {
 
 	console.log('Correct: ' + Math.round((1 - wrongCounter / TestData.length) * 100) + ' %')
 
-	for (var i = 0; i < 4; i++) {
+	for (var i = 0; i < totalClassCounter.length; i++) {
 		console.log(' class total correct: ' + Math.round(correctClassCounter[i] / totalClassCounter[i] * 100) + ' %  (of ' + totalClassCounter[i] + ')')
 	}
 
@@ -253,10 +258,16 @@ function getClass(row) {
 function getOutputValues(row) {
 	if (row[1] == -1) return [0, 0, 0];
 
-	var x1 = Math.max(1 - (row[1] / 320), 0);
-	var x2 = 1 - Math.abs(row[1] - 320) / 320;
-	var x3 = Math.max(1 - (Math.abs(row[1] - 640) / 320), 0);
-	return [x1, x2, x3];
+	// var x0 = Math.max(1 - (row[1] / 320), 0);
+	// var x1 = 1 - Math.abs(row[1] - 320) / 320;
+	// var x2 = Math.max(1 - (Math.abs(row[1] - 640) / 320), 0);
+	// return [x1, x2, x3];
+
+	var output = [];
+	for (var x = 0; x < 3; x++) {
+		output[x] = Math.max(0, 1 - Math.abs(row[1] - x / 2 * 640) / 320)
+	}
+	return output;
 }
 
 // var showedInputdataLength = false; // stupid
@@ -330,10 +341,15 @@ function saveNetwork(name) {
 	var json = net.toJSON();
 	var str = JSON.stringify(json);
 
-	fs.writeFile('saves/' + name, str, function(err) {
-		if (err) return console.log(err);
-		else console.log('network saved as '+name)
+	var promise = new Promise(function(resolve, reject) {
+		fs.writeFile('saves/' + name, str, function(err) {
+			if (err) return console.log(err)
+			else console.log('network saved as ' + name)
+			resolve()
+		});
 	});
+
+	return promise
 }
 
 
@@ -351,6 +367,13 @@ function roundArray(array) {
 	for (var i = 0; i < array.length; i++)
 		newArray.push(Math.round(array[i] * 100) / 100)
 	return newArray
+}
+
+function isZeroArray(array){
+	for (var i=0; i<array.length; i++)
+		if (array[i] !== 0) return false;
+
+	return true;
 }
 
 
