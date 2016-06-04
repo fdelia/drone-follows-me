@@ -1,5 +1,5 @@
-const NUMBER_DB_DATA = 300;
-const MAX_EPOCHS = 100
+const NUMBER_DB_DATA = 4499;
+const MAX_EPOCHS = 10
 
 const AVG_LINES = 1
 const AVG_COLS = 1
@@ -33,10 +33,15 @@ adadelta ~60%
 sgd 65%, sometimes 70%+
 adagrad 50%
 
-with the additional hidden layer + pool:
-adadelta ~65% fluctuant
+with the all conv layers + pools:
+adadelta ~65% fluctuant ... 70%
 sgd 60%
-adagrad 
+
+with 2conv & fc-30 layer at the end:
+adadelta 70% at epoch 3
+
+with 3conv & fc-30 layer at the end:
+adadelta 70%
 
 */
 
@@ -52,7 +57,7 @@ layer_defs.push({
 	type: 'conv',
 	sx: 5,
 	filters: 16, // 16
-	stride: 1,
+	stride: 1,	
 	pad: 2,
 	activation: 'relu'
 });
@@ -74,19 +79,20 @@ layer_defs.push({
 	sx: 2,
 	stride: 2
 });
-layer_defs.push({
-	type: 'conv',
-	sx: 5,
-	filters: 20,
-	stride: 1,
-	pad: 2,
-	activation: 'relu'
-});
-layer_defs.push({
-	type: 'pool',
-	sx: 2,
-	stride: 2
-});
+// layer_defs.push({
+// 	type: 'conv',
+// 	sx: 5,
+// 	filters: 20,
+// 	stride: 1,
+// 	pad: 2,
+// 	activation: 'relu'
+// });
+// layer_defs.push({
+// 	type: 'pool',
+// 	sx: 2,
+// 	stride: 2
+// });
+layer_defs.push({type:'fc', num_neurons:30, activation:'relu'});
 if (REGRESSION_OUTPUT)
 	layer_defs.push({
 		type: 'regression',
@@ -106,7 +112,7 @@ net.makeLayers(layer_defs);
 var trainer = new convnetjs.Trainer(net, {
 	method: 'adadelta',
 	// l1_decay: 0.001,
-	l2_decay: 0.0001,
+	l2_decay: 0.0001, // 0.0001
 	batch_size: 4,
 	learning_rate: 0.01 // 0.01
 		,
@@ -123,7 +129,7 @@ loadImages(DBdata).then(function() {
 	console.log('\ntraining')
 	var stats;
 	for (var e = 0; e < MAX_EPOCHS; e++) {
-		console.log('epoch: ' + (e + 1) + ' of ' + MAX_EPOCHS)
+		console.log('\nepoch: ' + (e + 1) + ' of ' + MAX_EPOCHS)
 		ImageData = shuffle(ImageData)
 
 		for (var i = 0; i < ImageData.length; i++) {
@@ -136,6 +142,8 @@ loadImages(DBdata).then(function() {
 		// console.log(stats);
 		if (e % 1 == 0)
 			testNetwork();
+
+		saveNetwork('net_e' + e + '.txt');
 	}
 
 	testNetwork();
@@ -144,7 +152,7 @@ loadImages(DBdata).then(function() {
 
 function testNetwork() {
 	var tempData = TestData
-	TestData = shuffle(tempData).slice(0, 200)
+	TestData = shuffle(tempData) //.slice(0, 200)
 
 	console.log('\ntesting')
 	var wrongCounter = 0;
@@ -204,7 +212,7 @@ function loadDB() {
 
 
 function loadImages(db_array) {
-	if (db_array.length % 100 == 0) console.log('   ' + db_array.length + ' images left');
+	if (db_array.length % 500 == 0) console.log('   ' + db_array.length + ' images left');
 	var row = db_array.shift();
 	if (REGRESSION_OUTPUT)
 		var p1 = loadImage(row[0], getOutputValues(row));
@@ -318,12 +326,13 @@ function getInputData(data) {
 }
 
 
-function saveNetwork() {
+function saveNetwork(name) {
 	var json = net.toJSON();
 	var str = JSON.stringify(json);
 
-	fs.writeFile('saves/net.txt', str, function(err) {
+	fs.writeFile('saves/' + name, str, function(err) {
 		if (err) return console.log(err);
+		else console.log('network saved as '+name)
 	});
 }
 

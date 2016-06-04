@@ -4,6 +4,7 @@ const DB_NAME = 'database.csv';
 DBdata = helpers.loadDatabase(DB_NAME);
 
 console.log('found ' + DBdata.length + ' images')
+var images = []
 var classCounterX = [0, 0, 0, 0]
 var classCounterY = [0, 0, 0, 0]
 for (var i = 0; i < DBdata.length; i++) {
@@ -20,11 +21,15 @@ for (var i = 0; i < DBdata.length; i++) {
 	else if (row[2] < 213) classCounterY[1]++;
 	else classCounterY[2]++;
 
-	if (row[1] == -1 && row[2] != -1){
+	if (row[1] == -1 && row[2] != -1) {
 		console.log('this image entry is wrong: ')
 		console.log(row)
 	}
 
+	if (images.indexOf(row[0]) >= 0) {
+		console.log('double image found: ' + row[0])
+	} else
+		images.push(row[0]);
 }
 
 console.log('X: left, center, right, no hand')
