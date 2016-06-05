@@ -1,13 +1,10 @@
 var fs = require('fs');
 var PNG = require('png-js');
+const IMAGE_HEIGHT = 45;
+const IMAGE_WIDTH = 80;
 
 
 var Obj = {}
-
-Obj.hey = function() {
-	return 'hello';
-}
-
 
 Obj.loadDatabase = function(dbName) {
 	var lines = fs.readFileSync(dbName, 'utf8').split('\n');
@@ -28,134 +25,80 @@ Obj.loadDatabase = function(dbName) {
 	return data;
 }
 
-// Obj.getSectors = function(pixels, sectorWidth, imageWidth, imageHeight) {
-// 	var sectorsInHeight = Math.floor(imageHeight / sectorWidth);
-// 	var sectorsInWidth = Math.floor(imageWidth / sectorWidth);
-// 	var sectors = [],
-// 		sectorPixels = [];
-// 	var xStart = 0,
-// 		yStart = 0;
+Obj.augmentData = function(data) {
+	var dataLengthBefore = data.length;
+	for (var i = 0; i < dataLengthBefore; i++) {
+		if (this.isZeroArray(data[i][1])) continue;
+		
+		data.push(this.flipHorizontally(data[i]))
 
-// 	for (var i = 0; i < sectorsInWidth; i++) {
-// 		for (var j = 0; j < sectorsInHeight; j++) {
-// 			xStart = i * sectorWidth;
-// 			yStart = j * sectorWidth;
-// 			// console.log('sector ' + xStart + '/' + yStart + ' , w: ' + sectorWidth);
+		// data.push(this.flipVertically(data[i]))
 
-// 			// do this two sectors
-
-// 			sectorPixels = []
-// 			for (var x = xStart; x < xStart + sectorWidth; x++) {
-// 				for (var y = yStart; y < yStart + sectorWidth; y++) {
-// 					var idx = (imageWidth * y + x);
-// 					// if (pixels[idx] !== undefined) // TODO
-// 					sectorPixels.push(pixels[imageWidth * y + x]);
-
-// 				}
-// 			}
-// 			sectors.push((this.average(sectorPixels)));
-
-// 			// shifted sectors
-// 			// xStart += Math.floor(sectorWidth);
-// 			// yStart += Math.floor(sectorWidth);
-
-// 			// sectorPixels = []
-// 			// for (var x = xStart; x < xStart + sectorWidth; x++) {
-// 			// 	for (var y = yStart; y < yStart + sectorWidth; y++) {
-// 			// 		var idx = (imageWidth * y + x);
-// 			// 		sectorPixels.push(pixels[imageWidth * y + x]);
-
-// 			// 	}
-// 			// }
-// 			// sectors.push((this.average(sectorPixels)));
-
-// 		}
-// 	}
-
-// 	return sectors;
-// }
-
-// Obj.checkIfNumber = function(n) {
-// 	if (isNaN(n)) console.log('found NaN, leave out');
-// 	else return n;
-// }
+		// continue;
 
 
-// Obj.getInputData = function(self, pixelDivider) {
-// 	var newData = [];
-// 	// var pixels = [];
+		// var row = data[i]
+		// if (row[1][0] == 0) {
+		// 	// move left part to right
+		// 	var t = [];
+		// 	for (var dc = 0; dc < 3; dc++) {
+		// 		for (var xc = 0; xc < 80 / 3; xc++) {
+		// 			for (var yc = 0; yc < IMAGE_HEIGHT; yc++) {
+		// 				var ix = (IMAGE_WIDTH * yc + xc) * 3 + dc;
+		// 				t[ix] = row[0].w.splice(ix, 1)
+		// 			}
+		// 		}
+		// 	}
+		// 	console.log(row[0].w.length)
 
-// 	// cut some margin out
-// 	// if (marginDivider) var margin = Math.round(self.height / marginDivider);
-// 	// else margin = 0;
+		// 	row[0].w = row[0].w.concat(t)
+		// 	var tt = row[1].shift()
+		// 	row[1] = row[1].push(tt) // tt is 0
 
-// 	var margin = 4; // because of average
+		// 	console.log(row[0].w.length)
+		// 	console.log(' ')
+		// }
+	}
 
-// 	var xPart = Math.round((self.width - margin) / 6);
-// 	var r = 0,
-// 		g = 0,
-// 		b = 0;
+	console.log('augmented data: ' + (data.length - dataLengthBefore))
+	return data
+}
 
-// 	for (var y = margin; y < self.height - margin; y++) {
-// 		for (var x = margin; x < self.width - margin; x++) {
-// 			var idx = (self.width * y + x) << 2;
+Obj.flipHorizontally = function(row) {
+	// flip horizontally  x => IMAGE_LENGTH - x
+	var t = [];
+	for (var dc = 0; dc < 3; dc++) {
+		for (var xc = 0; xc < IMAGE_WIDTH; xc++) {
+			for (var yc = 0; yc < IMAGE_HEIGHT; yc++) {
+				var ix = (IMAGE_WIDTH * yc + xc) * 3 + dc;
+				var ixN = (IMAGE_WIDTH * yc + (IMAGE_WIDTH - 1 - xc)) * 3 + dc;
+				t[ixN] = row[0].w[ix]
+			}
+		}
+	}
+	row[0].w = t
+	row[1].reverse()
 
-// 			function dt(idx_diff) {
-// 				return self.data[idx + idx_diff];
-// 			}
+	return row
+}
 
-// 			if (x % xPart == 0) {
-// 				newData.push(r);
-// 				newData.push(g);
-// 				newData.push(b);
+Obj.flipVertically = function(row) {
+	// flip vertically
+	var t = [];
+	for (var dc = 0; dc < 3; dc++) {
+		for (var xc = 0; xc < IMAGE_WIDTH; xc++) {
+			for (var yc = 0; yc < IMAGE_HEIGHT; yc++) {
+				var ix = (IMAGE_WIDTH * yc + xc) * 3 + dc;
+				var ixN = (IMAGE_WIDTH * (IMAGE_HEIGHT - 1 - yc) + xc) * 3 + dc;
+				t[ixN] = row[0].w[ix]
+			}
+		}
+	}
+	row[0].w = t
 
-// 				r = 0;
-// 				g = 0;
-// 				b = 0;
-// 			} else {
-// 				r += dt(0);
-// 				g += dt(1);
-// 				b += dt(2);
-// 			}
+	return row
+}
 
-
-// 			// if (x % pixelDivider == 0 && y % pixelDivider == 0) {
-// 			// 	function dt(idx_diff) {
-// 			// 		return self.data[idx + idx_diff];
-// 			// 	}
-
-// 			// 	// var r = (self.data[idx - 4] + self.data[idx + 0] + self.data[idx + 4]) / 3;
-// 			// 	var r = (dt(-4) + dt(+0) + dt(+4)) / 3;
-// 			// 	r += (dt(-self.width - 4) + dt(-self.width + 0) + dt(-self.width + 4)) / 3;
-// 			// 	r += (dt(+self.width - 4) + dt(+self.width + 0) + dt(+self.width + 4)) / 3;
-// 			// 	r /= 3;
-// 			// 	var g = (self.data[idx - 3] + self.data[idx + 1] + self.data[idx + 5]) / 3;
-// 			// 	g += (dt(-self.width - 3) + dt(-self.width + 1) + dt(-self.width + 5)) / 3;
-// 			// 	g += (dt(+self.width - 3) + dt(+self.width + 1) + dt(+self.width + 5)) / 3;
-// 			// 	g /= 3;
-// 			// 	var b = (self.data[idx - 2] + self.data[idx + 2] + self.data[idx + 6]) / 3;
-// 			// 	b += (dt(-self.width - 2) + dt(-self.width + 2) + dt(-self.width + 6)) / 3;
-// 			// 	b += (dt(+self.width - 2) + dt(+self.width + 2) + dt(+self.width + 6)) / 3;
-// 			// 	b /= 3;
-
-// 			// 	newData.push(r);
-// 			// 	newData.push(g);
-// 			// 	newData.push(b);
-
-
-// 			// 	// newData.push(self.data[idx]);
-// 			// 	// newData.push(self.data[idx + 1]);
-// 			// 	// newData.push(self.data[idx + 2]);
-
-// 			// 	// newData.push((toInterval(self.data[idx]) + toInterval(self.data[idx + 1]) + toInterval(self.data[idx + 2])) / 3)
-// 			// 	// newData.push(Math.round((self.data[idx] + self.data[idx + 1] + self.data[idx + 2]) / 3));
-// 			// }
-// 		}
-// 	}
-
-// 	// self.pack().pipe(fs.createWriteStream('out.png'));
-// 	return newData;
-// }
 
 Obj.getInputData = function(self, pixelDivider) {
 	var newData = [];
@@ -293,7 +236,7 @@ Obj.average = function(arr) {
 }
 
 Array.prototype.max = function() {
-  return Math.max.apply(null, this);
+	return Math.max.apply(null, this);
 };
 
 
@@ -301,6 +244,21 @@ Obj.isMax = function(array) {
 	for (var i = 0; i < array.length; i++)
 		if (array[i] == Math.max.apply(null, array)) return i;
 	return false;
+}
+
+Obj.isZeroArray = function(array) {
+	for (var i = 0; i < array.length; i++)
+		if (array[i] !== 0) return false;
+
+	return true;
+}
+
+Obj.getUndefinedIndexes = function(array) {
+	var indexes = []
+	for (var i = 0; i < array.length; i++)
+		if (array[i] === undefined) indexes.push(i)
+
+	return indexes
 }
 
 

@@ -1,5 +1,5 @@
-const NUMBER_DB_DATA = 4499;
-const MAX_EPOCHS = 30
+const NUMBER_DB_DATA = 4973; 
+const MAX_EPOCHS = 2
 
 const AVG_LINES = 1
 const AVG_COLS = 1
@@ -10,6 +10,7 @@ const IMAGE_WIDTH = 80;
 const IMAGE_HEIGHT = 45;
 const DB_NAME = 'database.csv';
 
+const OUTPUT_PARTS = 3; // number of ... (not active yet)
 
 
 var convnetjs = require('convnetjs')
@@ -26,6 +27,7 @@ var DBdata = [],
 	ImageData = [];
 var net;
 
+
 /*
 
 Trainers, converges to:
@@ -41,7 +43,14 @@ with 2conv & fc-30 layer at the end:
 adadelta 70% at epoch 3 ... 75% at 6
 
 with 3conv & fc-30 layer at the end:
-adadelta 70%
+adadelta 70% ... +
+
+with 3conv & 2fc-30:
+not converging
+
+data augmentation: 3conv & fc30: 85% ??? (not repeatable, mistake in model?)
+
+
 
 */
 
@@ -63,45 +72,49 @@ layer_defs.push({
 });
 layer_defs.push({
 	type: 'pool',
-	sx: 2,
+	sx: 2, // 2
+	stride: 2 // 2
+});
+layer_defs.push({
+	type: 'conv',
+	sx: 3, // 5
+	filters: 20,
+	stride: 1,
+	pad: 2,
+	activation: 'relu'
+});
+layer_defs.push({
+	type: 'pool',
+	sx: 2, // 2
+	stride: 2
+});
+layer_defs.push({
+	type: 'conv',
+	sx: 5, // 5
+	filters: 20,
+	stride: 1,
+	pad: 2,
+	activation: 'relu'
+});
+layer_defs.push({
+	type: 'pool',
+	sx: 2, // 2
 	stride: 2
 });
 layer_defs.push({
 	type: 'fc',
-	num_neurons: 30,
+	num_neurons: 50,
 	activation: 'relu'
 });
-
-layer_defs.push({
-	type: 'conv',
-	sx: 5,
-	filters: 20,
-	stride: 1,
-	pad: 2,
-	activation: 'relu'
-});
-layer_defs.push({
-	type: 'pool',
-	sx: 2,
-	stride: 2
-});
-layer_defs.push({
-	type: 'conv',
-	sx: 5,
-	filters: 20,
-	stride: 1,
-	pad: 2,
-	activation: 'relu'
-});
-layer_defs.push({
-	type: 'pool',
-	sx: 2,
-	stride: 2
-});
+// layer_defs.push({
+// 	type: 'fc',
+// 	num_neurons: 10,
+// 	activation: 'relu'
+// });
 if (REGRESSION_OUTPUT)
 	layer_defs.push({
 		type: 'regression',
-		num_neurons: 3
+		num_neurons: OUTPUT_PARTS
 	});
 else
 	layer_defs.push({
@@ -128,7 +141,10 @@ loadDB()
 console.log('load image data')
 loadImages(DBdata).then(function() {
 	TestData = ImageData.splice(-1 * Math.round(ImageData.length / 8))
-		// console.log(ImageData[0])
+
+	ImageData = helpers.augmentData(ImageData)
+	ImageData = shuffle(ImageData)
+	
 	console.log('Training rows: ' + ImageData.length + ', Test rows: ' + TestData.length)
 
 	console.log('\ntraining')
@@ -138,9 +154,22 @@ loadImages(DBdata).then(function() {
 		ImageData = shuffle(ImageData)
 
 		for (var i = 0; i < ImageData.length; i++) {
-			var x = ImageData[i][0];
-			stats = trainer.train(x, ImageData[i][1]);
-			if ((i + 1) % 100 == 0 && i > 0) console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images done')
+			try {
+				stats = trainer.train(ImageData[i][0], ImageData[i][1]);
+
+				// augmentation, do it here to save memory
+				// var t = helpers.flipHorizontally(ImageData[i])
+				// stats = trainer.train(t[0], t[1])
+
+				// t = helpers.flipVertically(ImageData[i])
+				// stats = trainer.train(t[0], t[1])
+
+			} catch (e) {
+				console.log(e)
+			}
+			if ((i + 1) % 100 == 0 && i > 0) {
+				console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss)
+			}
 			if (i % 1000 == 0 && i > 0) testNetwork();
 		}
 
@@ -156,13 +185,15 @@ loadImages(DBdata).then(function() {
 });
 
 function testNetwork() {
+	console.log('\ntesting')
+
 	var tempData = TestData
 	TestData = shuffle(tempData) //.slice(0, 200)
 
-	console.log('\ntesting')
 	var wrongCounter = 0;
-	var correctClassCounter = [0, 0, 0, 0];
-	var totalClassCounter = [0, 0, 0, 0]
+	var correctClassCounter = Array(OUTPUT_PARTS + 1).fill(0)
+	var totalClassCounter = Array(OUTPUT_PARTS + 1).fill(0)
+
 	for (var i = 0; i < TestData.length; i++) {
 		var res = net.forward(TestData[i][0])
 		var classIsMax = '';
@@ -172,7 +203,7 @@ function testNetwork() {
 			var err = Math.abs(res.w[0] - TestData[i][1][0])
 			err += Math.abs(res.w[1] - TestData[i][1][1])
 			err += Math.abs(res.w[2] - TestData[i][1][2])
-			if (! isZeroArray(TestData[i][1]) && (isMax(TestData[i][1]) != isMax(res.w) || err > 1)) {
+			if (!isZeroArray(TestData[i][1]) && (isMax(TestData[i][1]) != isMax(res.w) || err > 1)) {
 				wrongCounter++;
 				classIsMax = 'no';
 			} else if (isZeroArray(TestData[i][1]) && err > 0.4) {
@@ -180,10 +211,10 @@ function testNetwork() {
 				classIsMax = 'no';
 			} else {
 				classIsMax = 'yes';
-				if (! isZeroArray(TestData[i][1])) correctClassCounter[isMax(TestData[i][1])]++;
+				if (!isZeroArray(TestData[i][1])) correctClassCounter[isMax(TestData[i][1])]++;
 				else correctClassCounter[3]++;
 			}
-			if (! isZeroArray(TestData[i][1])) totalClassCounter[isMax(TestData[i][1])]++;
+			if (!isZeroArray(TestData[i][1])) totalClassCounter[isMax(TestData[i][1])]++;
 			else totalClassCounter[3]++;
 			// console.log('corr: ' + classIsMax + '  exp: ' + roundArray(TestData[i][1]) + '   ' + JSON.stringify(res.w))
 		}
@@ -196,7 +227,6 @@ function testNetwork() {
 			var classIsMax = TestData[i][1] == isMax(res.w) ? 'Yes' : 'No'
 			console.log('corr: ' + classIsMax + '  exp: ' + (TestData[i][1]) + '   ' + JSON.stringify(res.w))
 		}
-		// console.log('class: ' + TestData[i][1] + ' score: ' + res.w[TestData[i][1]] + ' isMax: ' + classIsMax + '   ' + JSON.stringify(res.w))
 	}
 
 	console.log('Correct: ' + Math.round((1 - wrongCounter / TestData.length) * 100) + ' %')
@@ -256,21 +286,15 @@ function getClass(row) {
 // }
 
 function getOutputValues(row) {
-	if (row[1] == -1) return [0, 0, 0];
-
-	// var x0 = Math.max(1 - (row[1] / 320), 0);
-	// var x1 = 1 - Math.abs(row[1] - 320) / 320;
-	// var x2 = Math.max(1 - (Math.abs(row[1] - 640) / 320), 0);
-	// return [x1, x2, x3];
+	if (row[1] == -1) return Array(OUTPUT_PARTS).fill(0)
 
 	var output = [];
-	for (var x = 0; x < 3; x++) {
-		output[x] = Math.max(0, 1 - Math.abs(row[1] - x / 2 * 640) / 320)
+	for (var x = 0; x < OUTPUT_PARTS; x++) {
+		output[x] = Math.max(0, 1 - Math.abs(row[1] - x / (OUTPUT_PARTS - 1) * 640) / 640 * (OUTPUT_PARTS - 1))
 	}
-	return output;
+	return output
 }
 
-// var showedInputdataLength = false; // stupid
 function loadImage(imageName, outputValues) {
 	var path = 'records/' + imageName;
 
@@ -289,11 +313,6 @@ function loadImage(imageName, outputValues) {
 				PNG2.decode(path, function(pixels) {
 					var inputData = getInputData(pixels);
 
-					// if (!showedInputdataLength) {
-					// 	console.log('   (length input data: ' + inputData.w.length + ' must be = # input layer neurons)');
-					// 	showedInputdataLength = true;
-					// }
-
 					ImageData.push([inputData, outputValues]);
 					resolve();
 				});
@@ -306,21 +325,6 @@ function loadImage(imageName, outputValues) {
 }
 
 function getInputData(data) {
-	// for (var y = margin; y < 360 - margin; y += AVG_LINES) {
-	// 	for (var x = margin; x < 640 - margin; x += AVG_COLS) {
-	// 		var idx = (640 * y + x) << 2;
-
-	// 		function dt(idx_diff) {
-	// 			return data[idx + idx_diff];
-	// 		}
-
-	// 		// standardize
-	// 		newData.push(dt(0) / 128 - 1)
-	// 		newData.push(dt(1) / 128 - 1)
-	// 		newData.push(dt(2) / 128 - 1)
-	// 	}
-	// }
-
 	var x = new convnetjs.Vol(IMAGE_WIDTH / AVG_COLS, IMAGE_HEIGHT / AVG_LINES, 3)
 
 	for (var dc = 0; dc < 3; dc++) {
@@ -328,6 +332,7 @@ function getInputData(data) {
 			for (var yc = 0; yc < IMAGE_HEIGHT; yc += AVG_COLS) {
 				// var ix = ((W * k) + i) * 4 + dc;
 				var ix = (IMAGE_WIDTH * yc + xc) * 4 + dc;
+
 				x.set(yc, xc, dc, data[ix] / 255.0 - 0.5);
 			}
 		}
@@ -369,8 +374,8 @@ function roundArray(array) {
 	return newArray
 }
 
-function isZeroArray(array){
-	for (var i=0; i<array.length; i++)
+function isZeroArray(array) {
+	for (var i = 0; i < array.length; i++)
 		if (array[i] !== 0) return false;
 
 	return true;
