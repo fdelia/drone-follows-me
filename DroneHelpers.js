@@ -32,8 +32,7 @@ Obj.augmentData = function(data, useRegression) {
 		// if (this.isZeroArray(data[i][1])) continue;
 
 		data.push(this.flipHorizontally(data[i], useRegression))
-
-		// data.push(this.flipVertically(data[i]))
+		data.push(this.flipVertically(data[i]))
 
 		// continue;
 
@@ -66,9 +65,9 @@ Obj.augmentData = function(data, useRegression) {
 }
 
 Obj.flipHorizontally = function(row, useRegression) {
+	// flip horizontally  x => IMAGE_LENGTH - x
+	// var t = {};
 	var newVol = new convnetjs.Vol(IMAGE_WIDTH, IMAGE_HEIGHT, 3)
-		// flip horizontally  x => IMAGE_LENGTH - x
-	var t = {};
 	for (var dc = 0; dc < 3; dc++) {
 		for (var xc = 0; xc < IMAGE_WIDTH; xc++) {
 			for (var yc = 0; yc < IMAGE_HEIGHT; yc++) {
@@ -76,7 +75,7 @@ Obj.flipHorizontally = function(row, useRegression) {
 				// var ixN = (IMAGE_WIDTH * yc + (IMAGE_WIDTH - 1 - xc)) * 3 + dc;
 				// t[ixN] = row[0].w[ix]
 
-				newVol.set(yc, IMAGE_WIDTH - 1 - xc, dc, row[0].w[ix] / 255.0 - 0.5);
+				newVol.set(yc, IMAGE_WIDTH - 1 - xc, dc, row[0].w[ix]);
 			}
 		}
 	}
@@ -102,17 +101,21 @@ Obj.flipHorizontally = function(row, useRegression) {
 
 Obj.flipVertically = function(row) {
 	// flip vertically
-	var t = [];
+	// var t = [];
+	var newVol = new convnetjs.Vol(IMAGE_WIDTH, IMAGE_HEIGHT, 3)
 	for (var dc = 0; dc < 3; dc++) {
 		for (var xc = 0; xc < IMAGE_WIDTH; xc++) {
 			for (var yc = 0; yc < IMAGE_HEIGHT; yc++) {
 				var ix = (IMAGE_WIDTH * yc + xc) * 3 + dc;
-				var ixN = (IMAGE_WIDTH * (IMAGE_HEIGHT - 1 - yc) + xc) * 3 + dc;
-				t[ixN] = row[0].w[ix]
+				// var ixN = (IMAGE_WIDTH * (IMAGE_HEIGHT - 1 - yc) + xc) * 3 + dc;
+				// t[ixN] = row[0].w[ix]
+
+				newVol.set(IMAGE_HEIGHT - 1 - yc, xc, dc, row[0].w[ix]);
 			}
 		}
 	}
-	row[0].w = t
+	// row[0].w = t
+	row[0] = newVol
 
 	return row
 }
