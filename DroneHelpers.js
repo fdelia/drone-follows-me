@@ -1,5 +1,6 @@
 var fs = require('fs');
 var PNG = require('png-js');
+var convnetjs = require('convnetjs')
 const IMAGE_HEIGHT = 45;
 const IMAGE_WIDTH = 80;
 
@@ -25,12 +26,12 @@ Obj.loadDatabase = function(dbName) {
 	return data;
 }
 
-Obj.augmentData = function(data) {
+Obj.augmentData = function(data, useRegression) {
 	var dataLengthBefore = data.length;
 	for (var i = 0; i < dataLengthBefore; i++) {
 		// if (this.isZeroArray(data[i][1])) continue;
-		
-		data.push(this.flipHorizontally(data[i]))
+
+		data.push(this.flipHorizontally(data[i], useRegression))
 
 		// data.push(this.flipVertically(data[i]))
 
@@ -64,34 +65,38 @@ Obj.augmentData = function(data) {
 	return data
 }
 
-Obj.flipHorizontally = function(row) {
-	// flip horizontally  x => IMAGE_LENGTH - x
+Obj.flipHorizontally = function(row, useRegression) {
+	var newVol = new convnetjs.Vol(IMAGE_WIDTH, IMAGE_HEIGHT, 3)
+		// flip horizontally  x => IMAGE_LENGTH - x
 	var t = {};
 	for (var dc = 0; dc < 3; dc++) {
 		for (var xc = 0; xc < IMAGE_WIDTH; xc++) {
 			for (var yc = 0; yc < IMAGE_HEIGHT; yc++) {
 				var ix = (IMAGE_WIDTH * yc + xc) * 3 + dc;
-				var ixN = (IMAGE_WIDTH * yc + (IMAGE_WIDTH - 1 - xc)) * 3 + dc;
-				// console.log(ix + ' -> '+ixN)
-				t[ixN] = row[0].w[ix]
-				// console.log(t)
+				// var ixN = (IMAGE_WIDTH * yc + (IMAGE_WIDTH - 1 - xc)) * 3 + dc;
+				// t[ixN] = row[0].w[ix]
+
+				newVol.set(yc, IMAGE_WIDTH - 1 - xc, dc, row[0].w[ix] / 255.0 - 0.5);
 			}
 		}
 	}
 
-	var t_arr = []
-	for (var i=0; i<IMAGE_WIDTH * (IMAGE_HEIGHT) *3; i++){
-		t_arr[i] = t[i]
-	}
-	
-	row[0].w = t_arr
-	console.log(t_arr)
+	// var t_arr = []
+	// for (var i = 0; i < IMAGE_WIDTH * (IMAGE_HEIGHT) * 3; i++) {
+	// 	t_arr[i] = t[i]
+	// }
+	// row[0].w = t_arr
+	// console.log(row)
+	row[0] = newVol
 
 	// switch left and right
-	// row[1].reverse()
-	if (row[1] == 0) row[1] = 2
-	else if (row[1] == 2) row[1] = 0
+	if (useRegression) row[1].reverse()
+	else {
+		if (row[1] == 0) row[1] = 2
+		else if (row[1] == 2) row[1] = 0
+	}
 
+	// console.log(row)
 	return row
 }
 
