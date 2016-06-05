@@ -1,10 +1,10 @@
-const NUMBER_DB_DATA = 4973; 
-const MAX_EPOCHS = 2
+const NUMBER_DB_DATA = 4973;
+const MAX_EPOCHS = 10
 
 const AVG_LINES = 1
 const AVG_COLS = 1
 
-const REGRESSION_OUTPUT = true
+const REGRESSION_OUTPUT = false
 
 const IMAGE_WIDTH = 80;
 const IMAGE_HEIGHT = 45;
@@ -30,27 +30,27 @@ var net;
 
 /*
 
+REGRESSION
 Trainers, converges to:
 adadelta ~60%
 sgd 65%, sometimes 70%+
 adagrad 50%
 
-with the all conv layers + pools:
+with the 3 conv layers + pools:
 adadelta ~65% fluctuant ... 70% 
 sgd 60%
 
-with 2conv & fc-30 layer at the end:
-adadelta 70% at epoch 3 ... 75% at 6
-
-with 3conv & fc-30 layer at the end:
-adadelta 70% ... +
-
-with 3conv & 2fc-30:
-not converging
-
+2conv & fc-30 layer at the end: adadelta 70% at epoch 3 ... 75% at 6
+3conv & fc-30 layer at the end: adadelta 70% ... +
+3conv & 2fc-30: not converging
 data augmentation: 3conv & fc30: 85% ??? (not repeatable, mistake in model?)
+added (dark/bad?) images
+4conv, fc-20, only with hand augmented: 55%
+4conv, fc-20, no augmentation: ~65%
 
-
+CLASSES
+4conv, fc-100, no augment: 65%
+4conv, fc-100, flipHoriz all: 
 
 */
 
@@ -65,7 +65,7 @@ layer_defs.push({
 layer_defs.push({
 	type: 'conv',
 	sx: 5,
-	filters: 20, // 16
+	filters: 28, // 16
 	stride: 1,
 	pad: 2,
 	activation: 'relu'
@@ -102,15 +102,24 @@ layer_defs.push({
 	stride: 2
 });
 layer_defs.push({
-	type: 'fc',
-	num_neurons: 50,
+	type: 'conv',
+	sx: 5, // 5
+	filters: 20,
+	stride: 1,
+	pad: 2,
 	activation: 'relu'
 });
-// layer_defs.push({
-// 	type: 'fc',
-// 	num_neurons: 10,
-// 	activation: 'relu'
-// });
+layer_defs.push({
+	type: 'pool',
+	sx: 2, // 2
+	stride: 2
+});
+layer_defs.push({
+	type: 'fc',
+	num_neurons: 100,
+	activation: 'relu'
+});
+
 if (REGRESSION_OUTPUT)
 	layer_defs.push({
 		type: 'regression',
@@ -122,8 +131,10 @@ else
 		num_classes: 4
 	});
 
-if (REGRESSION_OUTPUT) console.log('output: regression')
-else console.log('output: classes')
+// if (REGRESSION_OUTPUT) console.log('output: regression')
+// else console.log('output: classes')
+
+console.log(layer_defs)
 
 net = new convnetjs.Net();
 net.makeLayers(layer_defs);
@@ -132,7 +143,7 @@ var trainer = new convnetjs.Trainer(net, {
 	// l1_decay: 0.001,
 	l2_decay: 0.0001, // 0.0001
 	batch_size: 4,
-	learning_rate: 0.01 // 0.01
+	learning_rate: 0.005 // 0.01
 		,
 	momentum: 0.9
 });
@@ -142,9 +153,9 @@ console.log('load image data')
 loadImages(DBdata).then(function() {
 	TestData = ImageData.splice(-1 * Math.round(ImageData.length / 8))
 
-	ImageData = helpers.augmentData(ImageData)
+	// ImageData = helpers.augmentData(ImageData)
 	ImageData = shuffle(ImageData)
-	
+
 	console.log('Training rows: ' + ImageData.length + ', Test rows: ' + TestData.length)
 
 	console.log('\ntraining')
@@ -154,19 +165,19 @@ loadImages(DBdata).then(function() {
 		ImageData = shuffle(ImageData)
 
 		for (var i = 0; i < ImageData.length; i++) {
-			try {
-				stats = trainer.train(ImageData[i][0], ImageData[i][1]);
+			// try {
+			stats = trainer.train(ImageData[i][0], ImageData[i][1]);
 
-				// augmentation, do it here to save memory
-				// var t = helpers.flipHorizontally(ImageData[i])
-				// stats = trainer.train(t[0], t[1])
+			// augmentation, do it here to save memory
+			// var t = helpers.flipHorizontally(ImageData[i])
+			// stats = trainer.train(t[0], t[1])
 
-				// t = helpers.flipVertically(ImageData[i])
-				// stats = trainer.train(t[0], t[1])
+			// t = helpers.flipVertically(ImageData[i])
+			// stats = trainer.train(t[0], t[1])
 
-			} catch (e) {
-				console.log(e)
-			}
+			// } catch (e) {
+			// 	console.log(e)
+			// }
 			if ((i + 1) % 100 == 0 && i > 0) {
 				console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss)
 			}
@@ -177,7 +188,7 @@ loadImages(DBdata).then(function() {
 		if (e % 1 == 0)
 			testNetwork();
 
-		saveNetwork('net_e' + e + '.txt');
+		saveNetwork('net_e' + (e+1) + '.txt');
 	}
 
 	testNetwork();
@@ -225,7 +236,7 @@ function testNetwork() {
 			if (TestData[i][1] == isMax(res.w)) correctClassCounter[TestData[i][1]]++;
 			totalClassCounter[TestData[i][1]]++;
 			var classIsMax = TestData[i][1] == isMax(res.w) ? 'Yes' : 'No'
-			console.log('corr: ' + classIsMax + '  exp: ' + (TestData[i][1]) + '   ' + JSON.stringify(res.w))
+				// console.log('corr: ' + classIsMax + '  exp: ' + (TestData[i][1]) + '   ' + JSON.stringify(res.w))
 		}
 	}
 
@@ -247,7 +258,7 @@ function loadDB() {
 
 
 function loadImages(db_array) {
-	if (db_array.length % 500 == 0) console.log('   ' + db_array.length + ' images left');
+	if (db_array.length % 1000 == 0) console.log('   ' + db_array.length + ' images left');
 	var row = db_array.shift();
 	if (REGRESSION_OUTPUT)
 		var p1 = loadImage(row[0], getOutputValues(row));
@@ -272,17 +283,16 @@ function loadImages(db_array) {
 
 
 function getClass(row) {
-	if (row[1] == -1) return 0; // no hand
-	// else return 1;
-	if (row[1] <= 213) return 1; // left
-	if (row[1] <= 426) return 2; // center
-	return 3; // right
+	if (row[1] == -1) return 3; // no hand
+	if (row[1] <= 213) return 0; // left
+	if (row[1] <= 426) return 1; // center
+	return 2; // right
 }
 
 // Dies funktioniert sehr gut! (mit nur zwei Klassen)
 // function getClass(row) {
-// 	if (row[1] == -1) return 0;
-// 	else return 1;
+// 	if (row[1] == -1) return 0; // no hand
+// 	else return 1; // hand
 // }
 
 function getOutputValues(row) {

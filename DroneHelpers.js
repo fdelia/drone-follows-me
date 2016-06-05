@@ -28,7 +28,7 @@ Obj.loadDatabase = function(dbName) {
 Obj.augmentData = function(data) {
 	var dataLengthBefore = data.length;
 	for (var i = 0; i < dataLengthBefore; i++) {
-		if (this.isZeroArray(data[i][1])) continue;
+		// if (this.isZeroArray(data[i][1])) continue;
 		
 		data.push(this.flipHorizontally(data[i]))
 
@@ -77,7 +77,11 @@ Obj.flipHorizontally = function(row) {
 		}
 	}
 	row[0].w = t
-	row[1].reverse()
+
+	// switch left and right
+	// row[1].reverse()
+	if (row[1] == 0) row[1] = 2
+	else if (row[1] == 2) row[1] = 0
 
 	return row
 }
