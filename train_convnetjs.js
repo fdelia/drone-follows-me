@@ -1,13 +1,13 @@
-const NUMBER_DB_DATA = 4973;
-const MAX_EPOCHS = 10
+const NUMBER_DB_DATA = 5329;
+const MAX_EPOCHS = 5
 
+const IMAGE_WIDTH = 80;
+const IMAGE_HEIGHT = 45;
 const AVG_LINES = 1
 const AVG_COLS = 1
 
 const REGRESSION_OUTPUT = false
 
-const IMAGE_WIDTH = 80;
-const IMAGE_HEIGHT = 45;
 const DB_NAME = 'database.csv';
 
 const OUTPUT_PARTS = 3; // number of ... (not active yet)
@@ -49,8 +49,10 @@ added (dark/bad?) images
 4conv, fc-20, no augmentation: ~65%
 
 CLASSES
-4conv, fc-100, no augment: 65%
-4conv, fc-100, flipHoriz all: 
+4conv, fc-100, no augment, learning rate 0.01: 65% ... 75% (epoch 5) ... 80% epoch 10 (gets all classes nearly equally good)
+4conv, fc-100, flipHoriz all: overfit
+4conv, fc-200, no aug, filters 32 size 4 stride 2: 65% after 2 epochs, 70% after 3, 73% after 5
+
 
 */
 
@@ -64,10 +66,10 @@ layer_defs.push({
 });
 layer_defs.push({
 	type: 'conv',
-	sx: 5,
-	filters: 28, // 16
-	stride: 1,
-	pad: 2,
+	sx: 4,
+	filters: 32, // 16
+	stride: 2, // 1
+	// pad: 2, // 2
 	activation: 'relu'
 });
 layer_defs.push({
@@ -77,9 +79,22 @@ layer_defs.push({
 });
 layer_defs.push({
 	type: 'conv',
-	sx: 3, // 5
-	filters: 20,
-	stride: 1,
+	sx: 4, // 5
+	filters: 32, // 20
+	stride: 2, // 1
+	// pad: 2, // 2
+	activation: 'relu'
+});
+layer_defs.push({
+	type: 'pool',
+	sx: 2, // 2
+	stride: 2
+});
+layer_defs.push({
+	type: 'conv',
+	sx: 4, // 5
+	filters: 32, // 20
+	stride: 2, // 1
 	pad: 2,
 	activation: 'relu'
 });
@@ -90,22 +105,9 @@ layer_defs.push({
 });
 layer_defs.push({
 	type: 'conv',
-	sx: 5, // 5
-	filters: 20,
-	stride: 1,
-	pad: 2,
-	activation: 'relu'
-});
-layer_defs.push({
-	type: 'pool',
-	sx: 2, // 2
-	stride: 2
-});
-layer_defs.push({
-	type: 'conv',
-	sx: 5, // 5
-	filters: 20,
-	stride: 1,
+	sx: 4, // 5
+	filters: 32, // 20
+	stride: 2, // 1
 	pad: 2,
 	activation: 'relu'
 });
@@ -116,7 +118,7 @@ layer_defs.push({
 });
 layer_defs.push({
 	type: 'fc',
-	num_neurons: 100,
+	num_neurons: 200,
 	activation: 'relu'
 });
 
@@ -143,7 +145,7 @@ var trainer = new convnetjs.Trainer(net, {
 	// l1_decay: 0.001,
 	l2_decay: 0.0001, // 0.0001
 	batch_size: 4,
-	learning_rate: 0.005 // 0.01
+	learning_rate: 0.01 // 0.01
 		,
 	momentum: 0.9
 });
@@ -152,7 +154,7 @@ loadDB()
 console.log('load image data')
 loadImages(DBdata).then(function() {
 	TestData = ImageData.splice(-1 * Math.round(ImageData.length / 8))
-
+	
 	// ImageData = helpers.augmentData(ImageData)
 	ImageData = shuffle(ImageData)
 
@@ -161,7 +163,7 @@ loadImages(DBdata).then(function() {
 	console.log('\ntraining')
 	var stats;
 	for (var e = 0; e < MAX_EPOCHS; e++) {
-		console.log('\nepoch: ' + (e + 1) + ' of ' + MAX_EPOCHS)
+		console.log('\nepoch: ' + (e + 1) + ' of ' + MAX_EPOCHS + ' * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *')
 		ImageData = shuffle(ImageData)
 
 		for (var i = 0; i < ImageData.length; i++) {
@@ -178,7 +180,7 @@ loadImages(DBdata).then(function() {
 			// } catch (e) {
 			// 	console.log(e)
 			// }
-			if ((i + 1) % 100 == 0 && i > 0) {
+			if ((i + 1) % 500 == 0 && i > 0) {
 				console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss)
 			}
 			if (i % 1000 == 0 && i > 0) testNetwork();

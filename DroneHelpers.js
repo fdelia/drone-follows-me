@@ -66,17 +66,26 @@ Obj.augmentData = function(data) {
 
 Obj.flipHorizontally = function(row) {
 	// flip horizontally  x => IMAGE_LENGTH - x
-	var t = [];
+	var t = {};
 	for (var dc = 0; dc < 3; dc++) {
 		for (var xc = 0; xc < IMAGE_WIDTH; xc++) {
 			for (var yc = 0; yc < IMAGE_HEIGHT; yc++) {
 				var ix = (IMAGE_WIDTH * yc + xc) * 3 + dc;
 				var ixN = (IMAGE_WIDTH * yc + (IMAGE_WIDTH - 1 - xc)) * 3 + dc;
+				// console.log(ix + ' -> '+ixN)
 				t[ixN] = row[0].w[ix]
+				// console.log(t)
 			}
 		}
 	}
-	row[0].w = t
+
+	var t_arr = []
+	for (var i=0; i<IMAGE_WIDTH * (IMAGE_HEIGHT) *3; i++){
+		t_arr[i] = t[i]
+	}
+	
+	row[0].w = t_arr
+	console.log(t_arr)
 
 	// switch left and right
 	// row[1].reverse()
