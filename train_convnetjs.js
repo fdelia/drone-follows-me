@@ -1,4 +1,4 @@
-const NUMBER_DB_DATA = 329
+const NUMBER_DB_DATA = 5329
 const MAX_EPOCHS = 5
 
 const IMAGE_WIDTH = 128;
@@ -191,17 +191,17 @@ loadImages(DBdata).then(function() {
 			if (i % 10 == 0 && i > 0) totalLoss += stats.loss
 			if ((i + 1) % 10 == 0 && i > 0) {
 				readline.cursorTo(process.stdout, 0)
-				process.stdout.write('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss)
+				process.stdout.write('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss+'')
 			}
 			if (i % 2000 == 0 && i > 0) {
-				testNetwork();
 				console.log(' ')
+				testNetwork();
 				console.log('   avg loss: ' + totalLoss / 200)
 				totalLoss = 0
 			}
 		}
 
-		// console.log(stats);
+		console.log(' ');
 		if (e % 1 == 0)
 			testNetwork();
 
@@ -314,6 +314,7 @@ function loadImages(db_array) {
 					resolve();
 				});
 			else {
+				console.log(' ')
 				resolve();
 			}
 		});
