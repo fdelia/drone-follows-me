@@ -1,8 +1,9 @@
 var fs = require('fs');
 var PNG = require('png-js');
 var convnetjs = require('convnetjs')
-const IMAGE_HEIGHT = 45;
-const IMAGE_WIDTH = 80;
+const IMAGE_WIDTH = 128;
+const IMAGE_HEIGHT = 72;
+const OUTPUT_PARTS = 3; // number of ...
 
 
 var Obj = {}
@@ -32,7 +33,7 @@ Obj.augmentData = function(data, useRegression) {
 		// if (this.isZeroArray(data[i][1])) continue;
 
 		data.push(this.flipHorizontally(data[i], useRegression))
-		data.push(this.flipVertically(data[i]))
+			// data.push(this.flipVertically(data[i]))
 
 		// continue;
 
@@ -91,8 +92,55 @@ Obj.flipHorizontally = function(row, useRegression) {
 	// switch left and right
 	if (useRegression) row[1].reverse()
 	else {
-		if (row[1] == 0) row[1] = 2
-		else if (row[1] == 2) row[1] = 0
+		// if (row[1] == 0) row[1] = OUTPUT_PARTS - 1
+		// else if (row[1] == OUTPUT_PARTS - 1) row[1] = 0
+
+		// var switchNumbers = {
+		// 	1: 10,
+		// 	2: 11,
+		// 	3: 12,
+		// 	4: 7,
+		// 	5: 8,
+		// 	6: 9
+		// }
+
+		var switchNumbers = {
+			1: 13,
+			2: 14,
+			3: 15,
+			4: 10,
+			5: 11,
+			6: 12,
+			7: 7,
+			8: 8,
+			9: 9
+		}
+
+		// reverse
+		for (var i = 1; i <= 30; i++) {
+			if (!switchNumbers.hasOwnProperty(i)) break;
+			switchNumbers[switchNumbers[i]] = i;
+		}
+
+		row[1] = switchNumbers[row[1]]
+
+
+		// switch (row[1]) {
+		// 	case 1: row[1] = 10; break;
+		// 	case 2: row[1] = 11; break;
+		// 	case 3: row[1] = 12; break;
+		// 	case 4: row[1] = 7; break;
+		// 	case 5: row[1] = 8; break;
+		// 	case 6: row[1] = 9; break;
+
+		// 	case 7: row[1] = 4; break;
+		// 	case 8: row[1] = 5; break;
+		// 	case 9: row[1] = 6; break;
+		// 	case 10: row[1] = 1; break;
+		// 	case 11: row[1] = 2; break;
+		// 	case 12: row[1] = 3; break;
+		// }
+		// row[1] = OUTPUT_PARTS - 1 - row[1]
 	}
 
 	// console.log(row)

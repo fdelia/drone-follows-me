@@ -10,7 +10,7 @@ const REGRESSION_OUTPUT = false
 
 const DB_NAME = 'database.csv';
 
-const OUTPUT_PARTS = 15; // number of ... (not active yet)
+const OUTPUT_PARTS = 9; // number of ... (not active yet)
 
 
 var convnetjs = require('convnetjs')
@@ -66,6 +66,7 @@ layer_defs = [];
 
 
 
+
 layer_defs.push({
 	type: 'input',
 	out_sx: IMAGE_WIDTH / AVG_COLS,
@@ -75,7 +76,7 @@ layer_defs.push({
 layer_defs.push({
 	type: 'conv',
 	sx: 5,
-	filters: 36, // 32
+	filters: 24, // 32
 	stride: 4, // 2
 	// pad: 2, // 
 	activation: 'relu'
@@ -124,16 +125,16 @@ layer_defs.push({
 // 	sx: 2, // 2
 // 	stride: 2
 // });
-layer_defs.push({
-	type: 'fc',
-	num_neurons: 256, // 100, 200
-	activation: 'relu'
-});
 // layer_defs.push({
 // 	type: 'fc',
-// 	num_neurons: 256, // wasn't there
+// 	num_neurons: 512, // 100, 200
 // 	activation: 'relu'
 // });
+layer_defs.push({
+	type: 'fc',
+	num_neurons: 256, // wasn't there
+	activation: 'relu'
+});
 
 if (REGRESSION_OUTPUT)
 	layer_defs.push({
@@ -153,15 +154,13 @@ console.log(layer_defs)
 
 net = new convnetjs.Net();
 net.makeLayers(layer_defs);
-// loadNetwork('saves/net_e5.txt')
-
 var trainer_options = {
 	method: 'adadelta',
 	// l1_decay: 0.001,
-	l2_decay: 0.005, // 0.001
+	l2_decay: 0.001, // 0.0001
 	batch_size: 4,
 	learning_rate: 0.01 // 0.01
-		// ,momentum: 0.9
+	// ,momentum: 0.9
 }
 var trainer = new convnetjs.SGDTrainer(net, trainer_options);
 console.log(trainer_options)
@@ -203,7 +202,7 @@ loadImages(DBdata).then(function() {
 				console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss)
 					// console.log(stats)
 			}
-			if (i % 2000 == 0 && i > 0) {
+			if (i % 1000 == 0 && i > 0) {
 				testNetwork();
 				console.log('   avg loss: ' + totalLoss / 100)
 				totalLoss = 0
@@ -270,12 +269,11 @@ function testNetwork() {
 
 		// classes part
 		else {
+			resClassCounter[isMax(res.w)]++;
 			// resClassCounter[isMax(res.w)]++
 			// console.log(res.w)
+			if (TestData[i][1] != isMax(res.w)) wrongCounter++;
 			if (TestData[i][1] == isMax(res.w)) correctClassCounter[TestData[i][1]]++;
-			else wrongCounter++;
-
-			resClassCounter[isMax(res.w)]++;
 			totalClassCounter[TestData[i][1]]++;
 			// var classIsMax = TestData[i][1] == isMax(res.w) ? 'Yes' : 'No'
 			// console.log('corr: ' + classIsMax + '  exp: ' + (TestData[i][1]) + '   ' + JSON.stringify(res.w))
@@ -284,15 +282,11 @@ function testNetwork() {
 
 	console.log('Correct: ' + Math.round((1 - wrongCounter / TestData.length) * 100) + ' %')
 
-	correctPro = []
 	for (var i = 0; i < totalClassCounter.length; i++) {
-		// console.log(' class correct: ' + Math.round(correctClassCounter[i] / totalClassCounter[i] * 100) + ' %  (of ' + totalClassCounter[i] + ')')
-		correctPro[i] = Math.round(correctClassCounter[i] / totalClassCounter[i] * 100) / 100
+		console.log(' class total correct: ' + Math.round(correctClassCounter[i] / totalClassCounter[i] * 100) + ' %  (of ' + totalClassCounter[i] + ')')
 	}
 	console.log('predicted classes: ')
 	console.log(resClassCounter)
-	console.log('correct ones: ')
-	console.log(correctPro)
 
 	TestData = tempData
 }
@@ -350,30 +344,20 @@ function getClass(row) {
 	var x = row[1],
 		y = row[2];
 	if (x == -1) return 0;
-	if (x <= 128) {
+	if (x <= 213) {
 		if (y <= 120) return 1
 		if (y <= 240) return 2
 		if (y <= 360) return 3
 	}
-	if (x <= 256) {
+	if (x <= 426) {
 		if (y <= 120) return 4
 		if (y <= 240) return 5
 		if (y <= 360) return 6
 	}
-	if (x <= 384) {
+	if (x <= 640) {
 		if (y <= 120) return 7
 		if (y <= 240) return 8
 		if (y <= 360) return 9
-	}
-	if (x <= 512) {
-		if (y <= 120) return 10
-		if (y <= 240) return 11
-		if (y <= 360) return 12
-	}
-	if (x <= 640) {
-		if (y <= 120) return 13
-		if (y <= 240) return 14
-		if (y <= 360) return 15
 	}
 }
 
@@ -448,13 +432,6 @@ function saveNetwork(name) {
 	});
 
 	return promise
-}
-
-function loadNetwork(name) {
-	var str = fs.readFileSync(name)
-	var json = JSON.parse(str)
-	net.fromJSON(json)
-	console.log('network "' + name + '" loaded')
 }
 
 
