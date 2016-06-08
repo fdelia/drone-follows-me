@@ -96,6 +96,7 @@ Obj.flipHorizontally = function(row, useRegression) {
 		// else if (row[1] == OUTPUT_PARTS - 1) row[1] = 0
 
 		// var switchNumbers = {
+		//  0: 0,
 		// 	1: 10,
 		// 	2: 11,
 		// 	3: 12,
@@ -105,6 +106,7 @@ Obj.flipHorizontally = function(row, useRegression) {
 		// }
 
 		var switchNumbers = {
+			0: 0, // no hand
 			1: 13,
 			2: 14,
 			3: 15,

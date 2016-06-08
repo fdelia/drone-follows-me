@@ -1,4 +1,4 @@
-const NUMBER_DB_DATA = 5329
+const NUMBER_DB_DATA = 329
 const MAX_EPOCHS = 5
 
 const IMAGE_WIDTH = 128;
@@ -13,6 +13,7 @@ const DB_NAME = 'database.csv';
 const OUTPUT_PARTS = 15; // number of ... (not active yet)
 
 
+var readline = require('readline')
 var convnetjs = require('convnetjs')
 var fs = require('fs')
 var helpers = require('./DroneHelpers.js')
@@ -75,46 +76,33 @@ layer_defs.push({
 layer_defs.push({
 	type: 'conv',
 	sx: 5,
-	filters: 36, // 32
-	stride: 4, // 2
+	filters: 32, // 32
+	stride: 1, // 2
 	// pad: 2, // 
 	activation: 'relu'
 });
 layer_defs.push({
 	type: 'pool',
 	sx: 2, // 2
-	stride: 1 // 2
+	stride: 2 // 2
 });
 layer_defs.push({
 	type: 'conv',
 	sx: 5, // 4
-	filters: 48, // 32
-	stride: 4, // 2
+	filters: 32, // 32
+	stride: 1, // 2
 	// pad: 2, // 
 	activation: 'relu'
 });
 layer_defs.push({
 	type: 'pool',
-	sx: 2, // 2
-	stride: 1
+	sx: 3, // 2
+	stride: 3
 });
 // layer_defs.push({
 // 	type: 'conv',
 // 	sx: 4, // 4
-// 	filters: 64, // 32
-// 	stride: 4, // 1
-// 	pad: 2,
-// 	activation: 'relu'
-// });
-// layer_defs.push({
-// 	type: 'pool',
-// 	sx: 2, // 2
-// 	stride: 1
-// });
-// layer_defs.push({
-// 	type: 'conv',
-// 	sx: 4, // 4
-// 	filters: 128, // 32
+// 	filters: 32, // 32
 // 	stride: 4, // 1
 // 	pad: 2,
 // 	activation: 'relu'
@@ -124,11 +112,11 @@ layer_defs.push({
 // 	sx: 2, // 2
 // 	stride: 2
 // });
-layer_defs.push({
-	type: 'fc',
-	num_neurons: 256, // 100, 200
-	activation: 'relu'
-});
+// layer_defs.push({
+// 	type: 'fc',
+// 	num_neurons: 100, // 100, 200
+// 	activation: 'relu'
+// });
 // layer_defs.push({
 // 	type: 'fc',
 // 	num_neurons: 256, // wasn't there
@@ -158,7 +146,7 @@ net.makeLayers(layer_defs);
 var trainer_options = {
 	method: 'adadelta',
 	// l1_decay: 0.001,
-	l2_decay: 0.005, // 0.001
+	l2_decay: 0.001, // 0.001
 	batch_size: 4,
 	learning_rate: 0.01 // 0.01
 		// ,momentum: 0.9
@@ -175,7 +163,7 @@ loadImages(DBdata).then(function() {
 	// ImageData = helpers.augmentData(ImageData, REGRESSION_OUTPUT)
 	ImageData = shuffle(ImageData)
 
-	console.log('Training rows: ' + ImageData.length + ', Test rows: ' + TestData.length)
+	console.log('\nTraining rows: ' + ImageData.length + ', Test rows: ' + TestData.length)
 
 	console.log('\ntraining')
 	var stats, totalLoss = 0;
@@ -198,14 +186,17 @@ loadImages(DBdata).then(function() {
 			// 	console.log(e)
 			// 		// console.log(ImageData[i][0])
 			// }
+			// if (i==100) console.log('   first 100')
+			// if (i==200) console.log('   first 200')
 			if (i % 10 == 0 && i > 0) totalLoss += stats.loss
-			if ((i + 1) % 500 == 0 && i > 0) {
-				console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss)
-					// console.log(stats)
+			if ((i + 1) % 10 == 0 && i > 0) {
+				readline.cursorTo(process.stdout, 0)
+				process.stdout.write('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss)
 			}
 			if (i % 2000 == 0 && i > 0) {
 				testNetwork();
-				console.log('   avg loss: ' + totalLoss / 100)
+				console.log(' ')
+				console.log('   avg loss: ' + totalLoss / 200)
 				totalLoss = 0
 			}
 		}
@@ -242,7 +233,7 @@ function testNetwork() {
 		if (REGRESSION_OUTPUT) {
 			if (!firstRes) firstRes = res
 			else if (firstRes.w[0] == res.w[0] && firstRes.w[1] == res.w[1] && firstRes.w[2] == res.w[2] && !displayedMsg) {
-				console.log('overfitting problem')
+				console.log('overfitting')
 				displayedMsg = true
 				break;
 			}
@@ -291,7 +282,7 @@ function testNetwork() {
 	}
 	console.log('predicted classes: ')
 	console.log(resClassCounter)
-	console.log('correct ones: ')
+	console.log('correct ones (in %/100): ')
 	console.log(correctPro)
 
 	TestData = tempData
@@ -306,7 +297,10 @@ function loadDB() {
 
 
 function loadImages(db_array) {
-	if (db_array.length % 1000 == 0) console.log('   ' + db_array.length + ' images left');
+	if (db_array.length % 100 == 0) {
+		readline.cursorTo(process.stdout, 0)
+		process.stdout.write('   ' + db_array.length + ' images left');
+	}
 	var row = db_array.shift();
 	if (REGRESSION_OUTPUT)
 		var p1 = loadImage(row[0], getOutputValues(row));
@@ -349,8 +343,8 @@ function loadImages(db_array) {
 function getClass(row) {
 	var x = row[1],
 		y = row[2];
-	if (x == -1) return 0;
-	if (x <= 128) {
+	if (x == -1) return 0; // no hand
+	if (x <= 128) { // left side
 		if (y <= 120) return 1
 		if (y <= 240) return 2
 		if (y <= 360) return 3
@@ -360,7 +354,7 @@ function getClass(row) {
 		if (y <= 240) return 5
 		if (y <= 360) return 6
 	}
-	if (x <= 384) {
+	if (x <= 384) { // center
 		if (y <= 120) return 7
 		if (y <= 240) return 8
 		if (y <= 360) return 9
@@ -370,7 +364,7 @@ function getClass(row) {
 		if (y <= 240) return 11
 		if (y <= 360) return 12
 	}
-	if (x <= 640) {
+	if (x <= 640) { // right side
 		if (y <= 120) return 13
 		if (y <= 240) return 14
 		if (y <= 360) return 15
