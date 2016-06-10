@@ -171,6 +171,37 @@ Obj.flipVertically = function(row) {
 }
 
 
+// Obj = {}
+// not working!
+// Obj.getImageParts = function(pixels, xParts, yParts, imageWidth, imageHeight) {
+// 	var parts = []
+// 	var xPartLength = imageWidth / xParts
+// 	var yPartLength = imageHeight / yParts
+
+// 	for (xp = 0; xp < xParts; xp++) {
+// 		for (yp = 0; yp < yParts; yp++) {
+// 			var partNr = xp * yParts + yp
+// 			parts[partNr] = []	
+
+// 			for (var dc = 0; dc < 3; dc++) {
+// 				for (var xc = 0; xc < xPartLength; xc++) {
+// 					for (var yc = 0; yc < yPartLength; yc++) {
+// 						var ix = (imageWidth * (yc + yp * yPartLength) + (xc + xp * xPartLength)) * 3 + dc;
+// 						console.log(ix)
+
+// 						parts[partNr].push(pixels[ix])
+// 					}
+// 				}
+// 			}
+
+// 		}
+// 	}
+// 	return parts
+// }
+// var p = [1, 11, 111, 2, 22, 222, 3, 33, 333, 4, 44, 444, 5, 55, 555, 6, 66, 666, 7, 77, 777, 8, 88, 888, 9, 99, 999, 10, 1010, 101010, 11, 1111, 111111, 12, 1212, 121212, 13, 1313, 131313, 14, 1414, 141414, 15, 1515, 151515]
+// console.log(Obj.getImageParts(p, 5, 3, 5, 3))
+
+
 Obj.getInputData = function(self, pixelDivider) {
 	var newData = [];
 	// var pixels = [];

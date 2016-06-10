@@ -1,8 +1,8 @@
 const NUMBER_DB_DATA = 5329
-const MAX_EPOCHS = 5
+const MAX_EPOCHS = 2
 
-const IMAGE_WIDTH = 128;
-const IMAGE_HEIGHT = 72;
+const IMAGE_WIDTH = 128; // 128
+const IMAGE_HEIGHT = 72; // 72
 const AVG_LINES = 1
 const AVG_COLS = 1
 
@@ -14,6 +14,7 @@ const OUTPUT_PARTS = 15; // number of ... (not active yet)
 
 
 var readline = require('readline')
+	// var ProgressBar = require('progress');
 var convnetjs = require('convnetjs')
 var fs = require('fs')
 var helpers = require('./DroneHelpers.js')
@@ -56,6 +57,17 @@ CLASSES
 
 */
 
+// var p = []
+// for (var i = 1; i <= 15; i++) {
+// 	var s = i.toString()
+// 	p.push(parseInt(s)) // r
+// 	p.push(parseInt(s + s)) // g
+// 	p.push(parseInt(s + s + s)) // b
+// }
+// // console.log(p)
+// console.log(getImageParts(p, 5, 1))
+// 	// console.log(getImagePart(p, 2, 1, 2, 2))
+// process.exit(0)
 
 layer_defs = [];
 // layer_defs.push({type:'input', out_sx:128, out_sy:72, out_depth:3});
@@ -80,6 +92,7 @@ layer_defs.push({
 	stride: 1, // 2
 	// pad: 2, // 
 	activation: 'relu'
+		// drop_prob: 0.5
 });
 layer_defs.push({
 	type: 'pool',
@@ -88,24 +101,26 @@ layer_defs.push({
 });
 layer_defs.push({
 	type: 'conv',
-	sx: 5, // 4
-	filters: 32, // 32
+	sx: 3, // 4
+	filters: 92, // 32
 	stride: 1, // 2
 	// pad: 2, // 
-	activation: 'relu'
+	activation: 'relu',
+	drop_prob: 0.7
 });
 layer_defs.push({
 	type: 'pool',
-	sx: 3, // 2
-	stride: 3
+	sx: 2, // 2
+	stride: 2
 });
 // layer_defs.push({
 // 	type: 'conv',
 // 	sx: 4, // 4
-// 	filters: 32, // 32
+// 	filters: 48, // 32
 // 	stride: 4, // 1
 // 	pad: 2,
-// 	activation: 'relu'
+// 	activation: 'relu',
+// 	drop_prob: 0.5
 // });
 // layer_defs.push({
 // 	type: 'pool',
@@ -160,17 +175,24 @@ loadImages(DBdata).then(function() {
 	// console.log(ImageData[0][0].w)
 	TestData = ImageData.splice(-1 * Math.round(ImageData.length / 8))
 
-	// ImageData = helpers.augmentData(ImageData, REGRESSION_OUTPUT)
+	ImageData = helpers.augmentData(ImageData, REGRESSION_OUTPUT)
 	ImageData = shuffle(ImageData)
 
 	console.log('\nTraining rows: ' + ImageData.length + ', Test rows: ' + TestData.length)
 
-	console.log('\ntraining')
+	// console.log('\ntraining')
 	var stats, totalLoss = 0;
 	for (var e = 0; e < MAX_EPOCHS; e++) {
 		console.log('\nepoch: ' + (e + 1) + ' of ' + MAX_EPOCHS + ' * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *')
 		ImageData = shuffle(ImageData)
 
+		// var bar = new ProgressBar('  training [:bar] :percent :etas', {
+		// 	complete: '=',
+		// 	incomplete: ' ',
+		// 	width: 30,
+		// 	total: ImageData.length
+		// });
+		console.time('first-100')
 		for (var i = 0; i < ImageData.length; i++) {
 			// try {
 			stats = trainer.train(ImageData[i][0], ImageData[i][1]);
@@ -186,24 +208,30 @@ loadImages(DBdata).then(function() {
 			// 	console.log(e)
 			// 		// console.log(ImageData[i][0])
 			// }
-			// if (i==100) console.log('   first 100')
-			// if (i==200) console.log('   first 200')
-			if (i % 10 == 0 && i > 0) totalLoss += stats.loss
-			if ((i + 1) % 10 == 0 && i > 0) {
+			if (i == 100)
+				console.timeEnd('first-100')
+
+			if ((i + 1) % 10 == 0) {
+				// bar.tick(i)
 				readline.cursorTo(process.stdout, 0)
-				process.stdout.write('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss+'')
+				process.stdout.write('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss + '')
 			}
-			if (i % 2000 == 0 && i > 0) {
+			if ((i + 1) % 1000 == 0 && i > 0) {
+				readline.cursorTo(process.stdout, 0)
+				console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss + '')
+			}
+			if (i % 10 == 0 && i > 0) totalLoss += stats.loss
+			if (i % 500 == 0 && i > 0) {
 				console.log(' ')
-				testNetwork();
-				console.log('   avg loss: ' + totalLoss / 200)
+				testNetwork(true);
+				console.log('   avg loss: ' + totalLoss / 50)
 				totalLoss = 0
 			}
 		}
 
 		console.log(' ');
-		if (e % 1 == 0)
-			testNetwork();
+		// if (e % 1 == 0)
+		testNetwork();
 
 		saveNetwork('net_e' + (e + 1) + '.txt');
 	}
@@ -212,11 +240,9 @@ loadImages(DBdata).then(function() {
 
 });
 
-function testNetwork() {
+function testNetwork(testPart) {
+	var testPart = typeof testPart !== 'undefined' ? testPart : false;
 	console.log('\ntesting')
-
-	var tempData = TestData
-		// TestData = shuffle(tempData) //.slice(0, 200)
 
 	var wrongCounter = 0;
 	var correctClassCounter = Array(OUTPUT_PARTS + 1).fill(0)
@@ -225,8 +251,22 @@ function testNetwork() {
 
 	var firstRes;
 	var displayedMsg;
-	for (var i = 0; i < TestData.length; i++) {
+	// var bar = new ProgressBar('  testing [:bar] :percent :etas', {
+	// 		complete: '=',
+	// 		incomplete: ' ',
+	// 		width: 30,
+	// 		total: TestData.length
+	// 	});
+
+	var divider = 1
+	if (testPart) {
+		TestData = shuffle(TestData) // because of slow performance, test only a part
+		divider = 2
+	}
+
+	for (var i = 0; i < TestData.length / divider; i++) {
 		var res = net.forward(TestData[i][0])
+			// if (i%10==0) bar.tick(i)
 		var classIsMax = '';
 
 		// linear regression part
@@ -271,9 +311,14 @@ function testNetwork() {
 			// var classIsMax = TestData[i][1] == isMax(res.w) ? 'Yes' : 'No'
 			// console.log('corr: ' + classIsMax + '  exp: ' + (TestData[i][1]) + '   ' + JSON.stringify(res.w))
 		}
+
+		if (i % 10 == 0) {
+			readline.cursorTo(process.stdout, 0)
+			process.stdout.write('    ' + (i) + ' / ' + TestData.length + '')
+		}
 	}
 
-	console.log('Correct: ' + Math.round((1 - wrongCounter / TestData.length) * 100) + ' %')
+	console.log('\nCorrect: ' + Math.round((1 - wrongCounter / TestData.length) * 100) + ' %')
 
 	correctPro = []
 	for (var i = 0; i < totalClassCounter.length; i++) {
@@ -284,8 +329,8 @@ function testNetwork() {
 	console.log(resClassCounter)
 	console.log('correct ones (in %/100): ')
 	console.log(correctPro)
-
-	TestData = tempData
+	console.log('# of test images: ')
+	console.log(totalClassCounter)
 }
 
 
@@ -347,27 +392,27 @@ function getClass(row) {
 	if (x == -1) return 0; // no hand
 	if (x <= 128) { // left side
 		if (y <= 120) return 1
-		if (y <= 240) return 2
-		if (y <= 360) return 3
+		if (y <= 240) return 6
+		if (y <= 360) return 11
 	}
 	if (x <= 256) {
-		if (y <= 120) return 4
-		if (y <= 240) return 5
-		if (y <= 360) return 6
-	}
-	if (x <= 384) { // center
-		if (y <= 120) return 7
-		if (y <= 240) return 8
-		if (y <= 360) return 9
-	}
-	if (x <= 512) {
-		if (y <= 120) return 10
-		if (y <= 240) return 11
+		if (y <= 120) return 2
+		if (y <= 240) return 7
 		if (y <= 360) return 12
 	}
+	if (x <= 384) { // center
+		if (y <= 120) return 3
+		if (y <= 240) return 8
+		if (y <= 360) return 13
+	}
+	if (x <= 512) {
+		if (y <= 120) return 4
+		if (y <= 240) return 9
+		if (y <= 360) return 14
+	}
 	if (x <= 640) { // right side
-		if (y <= 120) return 13
-		if (y <= 240) return 14
+		if (y <= 120) return 5
+		if (y <= 240) return 10
 		if (y <= 360) return 15
 	}
 }
@@ -429,17 +474,60 @@ function getInputData(data) {
 	return x;
 }
 
+function getImageParts(pixels, partsX, partsY) {
+	var widthX = Math.floor(IMAGE_WIDTH / partsX)
+	var widthY = Math.floor(IMAGE_HEIGHT / partsY)
+	if (widthX == 0 || widthY == 0) {
+		console.trace('parts to small, please check image height/width and number of parts on X and Y axis')
+		return []
+	}
+	if (IMAGE_WIDTH * IMAGE_HEIGHT * 3 < pixels.length){
+		console.trace('not enough pixels for given image height and width?')
+	}
+	var parts = []
+
+	for (var yp = 0; yp < partsY; yp++) {
+		for (var xp = 0; xp < partsX; xp++) {
+			// var pNr = yp * partsX + xp
+			parts.push(getImagePart(pixels, xp * widthX, yp * widthY, widthX, widthY))
+		}
+	}
+
+	return parts
+}
+
+
+function getImagePart(pixels, startX, startY, widthX, widthY) {
+	var newPixels = []
+	widthX = Math.min(startX + widthX, IMAGE_WIDTH) - startX
+	widthY = Math.min(startY + widthY, IMAGE_HEIGHT) - startY
+
+	for (var yc = startY; yc < startY + widthY; yc++) {
+		for (var xc = startX; xc < startX + widthX; xc++) {
+			for (var dc = 0; dc < 3; dc++) {
+				var ix = (IMAGE_WIDTH * yc + xc) * 3 + dc;
+				newPixels.push(pixels[ix])
+			}
+		}
+	}
+
+	return newPixels
+}
+
 
 function saveNetwork(name) {
 	var json = net.toJSON();
 	var str = JSON.stringify(json);
 
+	fs.writeFileSync('saves/' + name, str)
 	var promise = new Promise(function(resolve, reject) {
-		fs.writeFile('saves/' + name, str, function(err) {
-			if (err) return console.log(err)
-			else console.log('network saved as ' + name)
-			resolve()
-		});
+		// fs.writeFile('saves/' + name, str, function(err) {
+		// 	if (err) return console.log(err)
+		// 	else console.log('network saved as ' + name)
+		// 	resolve()
+		// });
+
+		resolve()
 	});
 
 	return promise

@@ -1,11 +1,11 @@
 const PIXEL_DIVIDER = 2; // früher "TEILER", übernehmen aus train_images
 const MARGIN_DIVIDER = 0; // übernehmen aus train_images
 
-const NETWORK_NAME = 'saves/net_e10_77perc_classes_4conv_fc100.txt';
+const NETWORK_NAME = 'saves/net_e5_testthis_s1_.txt';
 const IMAGE_WIDTH = 640;
 const IMAGE_HEIGHT = 360;
-const AVG_LINES = 8
-const AVG_COLS = 8
+const AVG_LINES = 5
+const AVG_COLS = 5
 
 
 
@@ -53,12 +53,20 @@ pngStream.on('data', function(buffer) {
 		// pixels is a 1d array of decoded pixel data
 		var x = getInputData(pixels);
 		// console.log(x.w.length)
-			// console.log('loaded ' + counter)
-			// counter++
+		// console.log('loaded ' + counter)
+		// counter++
 		var resX = net.forward(x)
 		var res = resX.w
-		console.log(res)
-		// displayResult(res)
+
+		// console.log(res)
+			// displayResult(res)
+		// displayResultsForClasses(res)
+
+		var arr = Object.keys(res).map(function(k){return res[k]})
+		for (var i=0; i<=15; i++){
+			arr[i] = Math.round(arr[i]*100)/100
+		}
+		console.log(arr)
 	});
 	// }
 	// });
@@ -78,7 +86,7 @@ function getInputData(data) {
 				// var ix = ((W * k) + i) * 4 + dc;
 				var ix = (IMAGE_WIDTH * yc + xc) * 4 + dc;
 
-				x.set(yc, xc, dc, data[ix] / 255.0 - 0.5);
+				x.set(yc, xc, dc, (data[ix] / 255.0 - 0.5) * 2);
 			}
 		}
 	}
@@ -86,6 +94,25 @@ function getInputData(data) {
 	return x;
 }
 
+function displayResultsForClasses(res){
+	// standardize to max
+	var arr = Object.keys(res).map(function(k){return res[k]})
+	var max = Math.max.apply(null, arr)
+
+	for (i=1;i<=3;i++){
+		var str = ''
+		for (j=0;j<=12;j+=3){
+			var val = res[i+j] / max
+			if (val <= 0.3) str += ' '
+			else if (val < 0.7) str += '.'
+			else str += 'o'
+
+			str += ' '
+		}
+		console.log(str)
+	}
+	console.log(' ')
+}
 
 
 function displayResult(res) {

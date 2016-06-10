@@ -6,4 +6,5 @@ alt/records\ copy
 alt/records\ save
 saves/
 **/.DS_Store
-
+**/*.png
+**/*.jpg
