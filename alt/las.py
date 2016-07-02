@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+#
+# Use TensorFlow in future
+#
+
 from __future__ import print_function
 
 import sys
@@ -29,25 +33,29 @@ def load_dataset():
         
         c = 0
         for f in imageNames:
-            im = Image.open('records/' + f)
-            im = im.convert('LA') # convert to grayscale
-
+            im = Image.open('records_crop/' + f)
+            # im = im.convert('LA') # convert to grayscale
             # width, height = im.size
 
             pixels = list(im.getdata())
-            pixels = [x for (x, g) in pixels]
-            # pixels = np.asarray(pixels)
+            # pixels = [x for (x, g) in pixels]
+            pixels = np.asarray(pixels)
             # print([x for (x, g) in pixels])
             # pixels = np.asarray(im)
             # pixels = pixels / np.float32(256)
-            
             data = np.append(data, pixels)
+
+
+            if len(pixels.ravel()) != 4800:
+                print(str(f) + ' has not correct size')
+            if len(pixels) != 1600:
+                print(str(f) + ' has not correct size')
 
             c+=1
             if c%100==0:
                 print('   '+str(c) + ' loaded')
 
-        data = data.reshape(-1,1,128,72)
+        data = data.reshape(-1,3,40,40)
         data = data / np.float32(256)
         return data
 
@@ -55,28 +63,33 @@ def load_dataset():
         imageNames = []
         data = []
         lines = []
-        f = open('database.csv', 'r')
+        # f = open('database.csv', 'r')
+        f = open('records_crop/_DB.csv', 'r')
         for line in f.readlines():
             lines.append(line)
 
         # we do this because we want random images in the test and val set
         random.shuffle(lines)
 
-        # lines = lines[-500:]
+        # lines = lines[-100:]
 
         for line in lines:
             content = line.split(';')
             imageNames.append(content[0])
 
             content[1] = int(content[1])
-            if content[1] == -1: 
-                cl = 3
-            elif content[1] < 213:
-                cl = 0
-            elif content[1] < 426:
-                cl = 1
+            # if content[1] == -1: 
+            #     cl = 3
+            # elif content[1] < 213:
+            #     cl = 0
+            # elif content[1] < 426:
+            #     cl = 1
+            # else:
+            #     cl = 2
+            if content[1] == 1:
+                cl =1
             else:
-                cl = 2
+                cl = 0
 
             data.append(cl)
 
@@ -84,20 +97,28 @@ def load_dataset():
 
 
     imageNames, y_train = load_labels()
-    print('images in db: '+str(len(imageNames))+ ', labels: '+str(len(y_train)))
+    # print('images in db: '+str(len(imageNames))+ ', labels: '+str(len(y_train)))
     X_train = load_images(imageNames)
     print('loaded images: '+str(len(X_train)))
-    # print(X_train.shape[1:])
 
     # test set
-    X_test, y_test = X_train[:-300], y_train[:-300]
+    test_part = int(len(X_train)/7)
+    X_test, y_test = X_train[:test_part], y_train[:test_part]
+    # print(X_train)
+    # X_train = X_train.reshape(-1,3,128,72)
+    # y_train = y_train.reshape(-1,3,128,72)
+    # X_train[:test_part], y_train[:test_part] = [], []
+    # print(X_train)
 
     # val set
     val_part = int(len(X_train)/7)
-    X_val, y_val = X_train[:-val_part], y_train[:-val_part]
+    X_val, y_val = X_train[:val_part], y_train[:val_part]
+    # X_train[:val_part], y_train[:val_part] = [], []
 
-    # print(X_train)
-    # print(y_train)
+
+    print('training rows: ' + str(len(X_train)))
+    print('validation rows: ' + str(len(X_val)))
+    print('test rows: ' + str(len(X_test)))
     
     # # We just return all the arrays in order, as expected in main().
     # # (It doesn't matter how we do this as long as we can read them again.)
@@ -117,7 +138,7 @@ def build_mlp(input_var=None):
     # Input layer, specifying the expected input shape of the network
     # (unspecified batchsize, 1 channel, 28 rows and 28 columns) and
     # linking it to the given Theano variable `input_var`, if any:
-    l_in = lasagne.layers.InputLayer(shape=(None, 1, 128, 72),
+    l_in = lasagne.layers.InputLayer(shape=(None, 3, 128, 72),
                                      input_var=input_var)
     # l_in = lasagne.layers.InputLayer(shape=(3, 1, 128, 72),
     #                                  input_var=input_var)
@@ -187,7 +208,7 @@ def build_cnn(input_var=None):
     # and a fully-connected hidden layer in front of the output layer.
 
     # Input layer, as usual:
-    network = lasagne.layers.InputLayer(shape=(None, 1, 128, 72),
+    network = lasagne.layers.InputLayer(shape=(None, 3, 40, 40),
                                         input_var=input_var)
     # This time we do not apply input dropout, as it tends to work less well
     # for convolutional layers.
@@ -195,7 +216,7 @@ def build_cnn(input_var=None):
     # Convolutional layer with 32 kernels of size 5x5. Strided and padded
     # convolutions are supported as well; see the docstring.
     network = lasagne.layers.Conv2DLayer(
-            network, num_filters=32, filter_size=(5, 5),
+            network, num_filters=48, filter_size=(5, 5), # 32
             nonlinearity=lasagne.nonlinearities.rectify,
             W=lasagne.init.GlorotUniform())
     # Expert note: Lasagne provides alternative convolutional layers that
@@ -207,7 +228,7 @@ def build_cnn(input_var=None):
 
     # Another convolution with 32 5x5 kernels, and another 2x2 pooling:
     network = lasagne.layers.Conv2DLayer(
-            network, num_filters=32, filter_size=(5, 5),
+            network, num_filters=32, filter_size=(5, 5), # 32
             nonlinearity=lasagne.nonlinearities.rectify)
     network = lasagne.layers.MaxPool2DLayer(network, pool_size=(2, 2))
 
@@ -220,7 +241,7 @@ def build_cnn(input_var=None):
     # And, finally, the 10-unit output layer with 50% dropout on its inputs:
     network = lasagne.layers.DenseLayer(
             lasagne.layers.dropout(network, p=.5),
-            num_units=10,
+            num_units=2,
             nonlinearity=lasagne.nonlinearities.softmax)
 
     return network
@@ -239,8 +260,8 @@ def build_cnn(input_var=None):
 # return the last (remaining) mini-batch.
 
 def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
-    print(len(inputs))
-    print(len(targets))
+    # print(len(inputs))
+    # print(len(targets))
     assert len(inputs) == len(targets)
     if shuffle:
         indices = np.arange(len(inputs))
@@ -258,7 +279,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
 # more functions to better separate the code, but it wouldn't make it any
 # easier to read.
 
-def main(model='mlp', num_epochs=500):
+def main(model='cnn', num_epochs=500):
     # Load the dataset
     print("Loading data...")
     X_train, y_train, X_val, y_val, X_test, y_test = load_dataset()
@@ -323,16 +344,17 @@ def main(model='mlp', num_epochs=500):
         train_err = 0
         train_batches = 0
         start_time = time.time()
-        for batch in iterate_minibatches(X_train, y_train, 500, shuffle=True):
+        for batch in iterate_minibatches(X_train, y_train, 10, shuffle=True):
             inputs, targets = batch
             train_err += train_fn(inputs, targets)
             train_batches += 1
+            # print('   ' + str(train_batches) + ' trained, err: ' + str(train_err/train_batches))
 
         # And a full pass over the validation data:
         val_err = 0
         val_acc = 0
         val_batches = 0
-        for batch in iterate_minibatches(X_val, y_val, 500, shuffle=False):
+        for batch in iterate_minibatches(X_val, y_val, 10, shuffle=False):
             inputs, targets = batch
             err, acc = val_fn(inputs, targets)
             val_err += err
@@ -351,7 +373,7 @@ def main(model='mlp', num_epochs=500):
     test_err = 0
     test_acc = 0
     test_batches = 0
-    for batch in iterate_minibatches(X_test, y_test, 500, shuffle=False):
+    for batch in iterate_minibatches(X_test, y_test, 10, shuffle=False):
         inputs, targets = batch
         err, acc = val_fn(inputs, targets)
         test_err += err

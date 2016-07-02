@@ -65,18 +65,18 @@ Obj.augmentData = function(data, useRegression) {
 	return data
 }
 
-Obj.flipHorizontally = function(row, useRegression) {
+Obj.flipHorizontally = function(row, useRegression, imageWidth, imageHeight) {
 	// flip horizontally  x => IMAGE_LENGTH - x
 	// var t = {};
-	var newVol = new convnetjs.Vol(IMAGE_WIDTH, IMAGE_HEIGHT, 3)
+	var newVol = new convnetjs.Vol(imageWidth, imageHeight, 3)
 	for (var dc = 0; dc < 3; dc++) {
-		for (var xc = 0; xc < IMAGE_WIDTH; xc++) {
-			for (var yc = 0; yc < IMAGE_HEIGHT; yc++) {
-				var ix = (IMAGE_WIDTH * yc + xc) * 3 + dc;
+		for (var xc = 0; xc < imageWidth; xc++) {
+			for (var yc = 0; yc < imageHeight; yc++) {
+				var ix = (imageWidth * yc + xc) * 3 + dc;
 				// var ixN = (IMAGE_WIDTH * yc + (IMAGE_WIDTH - 1 - xc)) * 3 + dc;
 				// t[ixN] = row[0].w[ix]
 
-				newVol.set(yc, IMAGE_WIDTH - 1 - xc, dc, row[0].w[ix]);
+				newVol.set(yc, imageWidth - 1 - xc, dc, row[0].w[ix]);
 			}
 		}
 	}
@@ -105,26 +105,26 @@ Obj.flipHorizontally = function(row, useRegression) {
 		// 	6: 9
 		// }
 
-		var switchNumbers = {
-			0: 0, // no hand
-			1: 13,
-			2: 14,
-			3: 15,
-			4: 10,
-			5: 11,
-			6: 12,
-			7: 7,
-			8: 8,
-			9: 9
-		}
+		// var switchNumbers = {
+		// 	0: 0, // no hand
+		// 	1: 13,
+		// 	2: 14,
+		// 	3: 15,
+		// 	4: 10,
+		// 	5: 11,
+		// 	6: 12,
+		// 	7: 7,
+		// 	8: 8,
+		// 	9: 9
+		// }
 
-		// reverse
-		for (var i = 1; i <= 30; i++) {
-			if (!switchNumbers.hasOwnProperty(i)) break;
-			switchNumbers[switchNumbers[i]] = i;
-		}
+		// // reverse
+		// for (var i = 1; i <= 30; i++) {
+		// 	if (!switchNumbers.hasOwnProperty(i)) break;
+		// 	switchNumbers[switchNumbers[i]] = i;
+		// }
 
-		row[1] = switchNumbers[row[1]]
+		// row[1] = switchNumbers[row[1]]
 
 
 		// switch (row[1]) {
