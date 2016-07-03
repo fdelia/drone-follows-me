@@ -26,7 +26,8 @@ init_op = tf.initialize_all_variables()
 with tf.Session() as sess:
     sess.run(init_op)
 
-# coord = tf.train.
+# coord = tf.train.Coordinator()
+# threads = tf
 
 sys.exit(0)
 

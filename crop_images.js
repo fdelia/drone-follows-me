@@ -36,12 +36,18 @@ for (var i = 0; i < DBdata.length; i++) {
 		output = 0
 	}
 
-	// console.log(row[0])
 	try {
+		// fs.access('records/' + row[0], fs.F_OK, function(err) {
+		// 	if (!err) {
+		// 	} else {
+		// 		console.log('not found: '+row[0])
+		// 	}
+		// });
+
 		gm('records/' + row[0])
 			.crop(40, 40, x, y)
 			.write("records_crop/" + row[0], function(err) {
-				if (!err) console.log('done');
+				if (err) console.log(err);
 			});
 		newDB.push(row[0] + ';' + output)
 
@@ -68,8 +74,9 @@ for (var i = 0; i < DBdata.length; i++) {
 			newDB.push('2_' + row[0] + ';' + 0)
 		}
 	} catch (e) {
-		console.log(row)
 		console.log(e)
+		console.log(row)
+		dumpError(e)
 	}
 	// console.log(newDB.length)
 
@@ -103,4 +110,19 @@ function shuffle(array) {
 	}
 
 	return array;
+}
+
+function dumpError(err) {
+  if (typeof err === 'object') {
+    if (err.message) {
+      console.log('\nMessage: ' + err.message)
+    }
+    if (err.stack) {
+      console.log('\nStacktrace:')
+      console.log('====================')
+      console.log(err.stack);
+    }
+  } else {
+    console.log('dumpError :: argument is not an object');
+  }
 }
