@@ -16,7 +16,7 @@ var newDB = []
 DBdata = helpers.loadDatabase(DB_NAME);
 DBdata = shuffle(DBdata)
 
-console.log('DBdata: '+DBdata.length)
+console.log('DBdata: ' + DBdata.length)
 for (var i = 0; i < DBdata.length; i++) {
 	var row = DBdata[i],
 		x, y, output
@@ -48,36 +48,73 @@ for (var i = 0; i < DBdata.length; i++) {
 			.write("records_crop/" + row[0], function(err) {
 				if (err) console.log(err);
 			});
-		newDB.push(row[0] + ';' + output)
+		newDB.push(row[0] + ';' + output) // do this here because GM is working async and then it doesn't work (?)
 
-		// if (x < 64 && y < 30) {
-		// 	x = 80
-		// 	y = 32
+		// images with face
+		if (row[0].indexOf('img_14.4.5') == 0 || row[0].indexOf('img_14.5.0') == 0 || row[0].indexOf('img_14.5.1') == 0) {
+			if (x < 94 && y > 20) {
+				x2 = 88
+				y2 = 0
 
-		// 	gm('records/' + row[0])
-		// 		.crop(40, 40, x, y)
-		// 		.write("records_crop/2_" + row[0], function(err) {
-		// 			if (err) console.log(err);
-		// 		});
-		// 	newDB.push('2_' + row[0] + ';' + 0)
-		// }
-		// if (x < 64 && y < 30) {
-		// 	x = 64
-		// 	y = 32
+				gm('records/' + row[0])
+					.crop(40, 40, x2, y2)
+					.write("records_crop/3_" + row[0], function(err) {
+						if (err) console.log(err);
+					});
+				newDB.push('3_' + row[0] + ';' + 0)
 
-		// 	gm('records/' + row[0])
-		// 		.crop(40, 40, x, y)
-		// 		.write("records_crop/2_" + row[0], function(err) {
-		// 			if (err) console.log(err);
-		// 		});
-		// 	newDB.push('2_' + row[0] + ';' + 0)
-		// }
+				x2 = 68
+				y2 = 0
+
+				gm('records/' + row[0])
+					.crop(40, 40, x2, y2)
+					.write("records_crop/3_2" + row[0], function(err) {
+						if (err) console.log(err);
+					});
+				newDB.push('3_2' + row[0] + ';' + 0)
+			}
+
+			if (x > 76 && y > 30) {
+				x2 = 40
+				y2 = 0
+
+				gm('records/' + row[0])
+					.crop(40, 40, x2, y2)
+					.write("records_crop/3_3" + row[0], function(err) {
+						if (err) console.log(err);
+					});
+				newDB.push('3_3' + row[0] + ';' + 0)
+			}
+		}
+
+		if (x < 64 && y < 30) {
+			x2 = 80
+			y2 = 32
+
+			gm('records/' + row[0])
+				.crop(40, 40, x2, y2)
+				.write("records_crop/2_3" + row[0], function(err) {
+					if (err) console.log(err);
+				});
+			newDB.push('2_3' + row[0] + ';' + 0)
+		}
+		if (x < 64 && y < 30) {
+			x2 = 64
+			y2 = 32
+
+			gm('records/' + row[0])
+				.crop(40, 40, x2, y2)
+				.write("records_crop/2_4" + row[0], function(err) {
+					if (err) console.log(err);
+					else newDB.push('2_4' + row[0] + ';' + 0)
+				});
+		}
 	} catch (e) {
 		// always after 554 images there happens an TypeError: Cannot read property 'once' of undefined (in gm/lib/command.js:227)
 		console.log(e)
 		console.log(row)
 		dumpError(e)
-		console.log('in newDB: '+newDB.length)
+		console.log('in newDB: ' + newDB.length)
 		process.exit(0)
 	}
 	// console.log(newDB.length)
@@ -115,16 +152,16 @@ function shuffle(array) {
 }
 
 function dumpError(err) {
-  if (typeof err === 'object') {
-    if (err.message) {
-      console.log('\nMessage: ' + err.message)
-    }
-    if (err.stack) {
-      console.log('\nStacktrace:')
-      console.log('====================')
-      console.log(err.stack);
-    }
-  } else {
-    console.log('dumpError :: argument is not an object');
-  }
+	if (typeof err === 'object') {
+		if (err.message) {
+			console.log('\nMessage: ' + err.message)
+		}
+		if (err.stack) {
+			console.log('\nStacktrace:')
+			console.log('====================')
+			console.log(err.stack);
+		}
+	} else {
+		console.log('dumpError :: argument is not an object');
+	}
 }

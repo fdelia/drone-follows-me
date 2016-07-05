@@ -366,8 +366,9 @@ def main(argv=None):  # pylint: disable=unused-argument
       #   print(pred_spec.argmax(axis=1))
 
 
-      def test_image_for_hand(filename):
-        image = cv2.imread('records/'+filename)
+      def test_image_for_hand(image):
+        # image = cv2.imread('records/'+filename)
+
 
         def chunks(l, n):
           for i in range(0, len(l), n):
@@ -375,9 +376,10 @@ def main(argv=None):  # pylint: disable=unused-argument
 
 
 
-        (winW, winH) = (40, 40)
+        (winW, winH) = (IMAGE_SIZE, IMAGE_SIZE)
 
         clone = image.copy()
+        handX = []; handY = []
         for (x, y, window) in sliding_window(image, stepSize=16, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
@@ -391,7 +393,7 @@ def main(argv=None):  # pylint: disable=unused-argument
           for rgb in im2:
             new_im2.append(rgb[::-1])
 
-          data = numpy.asarray(new_im2, numpy.float32).reshape(IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS)
+          data = numpy.asarray(new_im2, numpy.float32)
 
           # data = numpy.asarray(window, numpy.float32)
           data = (data - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
@@ -402,21 +404,34 @@ def main(argv=None):  # pylint: disable=unused-argument
           predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
           # print (predictions)
           # time.sleep(2)
-          if predictions[0][1] > predictions[0][0]:
+          if predictions[0][1] > predictions[0][0] and predictions[0][1] > 0.999:
             # clone = image.copy()
+            # print (predictions[0][1])
+            handX.append(x * predictions[0][1])
+            handY.append(y * predictions[0][1])
             cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 255*predictions[0][1], 0), 1)
 
-        cv2.imshow('search for hand in '+filename, clone)
+        if len(handX)>2:
+          x = int(numpy.average(handX))
+          y = int(numpy.average(handY))
+          cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 0, 255), 1)
+        cv2.imshow('search for hand', clone)
         cv2.waitKey(1)
-        time.sleep(3)
+        # time.sleep(3)
        
 
 
+      # fs = ['img_14.4.57.402.png', 'img_14.5.4.441.png', 'img_116.5.5_18.40.25.305.png', 'img_142.png', 'img_14.4.4.73.png', 'img_14.4.15.145.png', 'img_11.46.12.78.png', 'img_12.53.10.112.png', 'img_14.4.7.97.png']
+      # for filename in fs:
+      #   print (filename)
+      #   test_image_for_hand(filename)
+      video_capture = cv2.VideoCapture(0)
 
-      fs = ['img_116.5.5_18.40.25.305.png', 'img_142.png', 'img_14.4.4.73.png', 'img_14.4.15.145.png', 'img_11.46.12.78.png', 'img_12.53.10.112.png', 'img_14.4.7.97.png']
-      for filename in fs:
-        print (filename)
-        test_image_for_hand(filename)
+      while True:
+          # Capture frame-by-frame
+          ret, frame = video_capture.read()
+          frame = cv2.resize(frame, (128, 72))
+          test_image_for_hand(frame)
 
 
 
