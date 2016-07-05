@@ -52,17 +52,17 @@ console.log('Test counter: '+testCounter)
 
 
 
-DBsmall = helpers.loadDatabase('records_crop/_DB.csv')
-var classCounter = [0, 0]
-for (var i=0; i< DBsmall.length; i++){
-	var row = DBsmall[i];
-	if (row[1] == '0') classCounter[0]++;
-	else classCounter[1]++;
-}
+// DBsmall = helpers.loadDatabase('records_crop/_DB.csv')
+// var classCounter = [0, 0]
+// for (var i=0; i< DBsmall.length; i++){
+// 	var row = DBsmall[i];
+// 	if (row[1] == '0') classCounter[0]++;
+// 	else classCounter[1]++;
+// }
 
-console.log('\ncropped images:')
-console.log('no hand, hand')
-console.log(classCounter)
+// console.log('\ncropped images:')
+// console.log('no hand, hand')
+// console.log(classCounter)
 
 
 

@@ -44,15 +44,15 @@ IMAGE_SIZE = 40
 NUM_CHANNELS = 3
 PIXEL_DEPTH = 255
 NUM_LABELS = 2
-VALIDATION_SIZE = 1000  # Size of the validation set.
+# VALIDATION_SIZE = 200  # Size of the validation set.
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
 BATCH_SIZE = 50 # 64
-NUM_EPOCHS = 100
+NUM_EPOCHS = 30 # ok with 100
 EVAL_BATCH_SIZE = 50 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 
-tf.app.flags.DEFINE_boolean('run_only', True, 'only run with activation images')
+tf.app.flags.DEFINE_boolean('run_only', False, 'only run with activation images')
 
 tf.app.flags.DEFINE_boolean("self_test", False, "True if running a self test.")
 FLAGS = tf.app.flags.FLAGS
@@ -76,8 +76,8 @@ def get_images_and_labels(num_images):
       if not os.path.isfile('records_crop/'+filename):
         continue
 
-      im = Image.open('records_crop/'+filename)  # .convert("L")  # Convert to greyscale
-      im = numpy.asarray(im, numpy.float32)
+      im_org = Image.open('records_crop/'+filename)  # .convert("L")  # Convert to greyscale
+      im = numpy.asarray(im_org, numpy.float32)
       
       # queue = tf.train.string_input_producer([filename])
       # reader = tf.WholeFileReader()
@@ -87,23 +87,31 @@ def get_images_and_labels(num_images):
       # im = tf.cast(im, tf.float32)
 
       if im.shape != (IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS):
-        print('    wrong shape: '+filename)
+        pass
+        # print('    wrong shape: '+filename)
         # print(im.shape)
       else:
-        images = numpy.append(images, [im])
+        # images = numpy.append(images, [im])
+        images.append(im)
         labels = numpy.append(labels, [label])
         counter += 1
 
+        # augmentation
+        im2 = im_org.transpose(Image.FLIP_LEFT_RIGHT)
+        im2 = numpy.asarray(im2, numpy.float32)
+        # images = numpy.append(images, [im2])
+        images.append(im2)
+        labels = numpy.append(labels, [label])
+        counter += 1        
+
       if counter%100 == 0:
-        print('   loaded '+str(counter)+' images')
-      # augmentation
-      # im2 = tf.image.flip_left_right(im)
-      # images = numpy.append(images, [im2])
-      # labels = numpy.append(labels, [label])
-      # images = numpy.append(images, [tf.image.])
-        
+        print('   loaded '+str(counter)+' images') 
+
+      # if counter>300:
+      #   break       
 
   print (len(images))
+  images = numpy.asarray(images, numpy.float32)
   images = (images - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
   images = images.reshape(counter, IMAGE_SIZE, IMAGE_SIZE, 3)
 
@@ -138,8 +146,9 @@ def special_images():
 
 def sliding_window(image, stepSize, windowSize):
   # slide a window across the image
+  marginX = 10
   for y in xrange(0, image.shape[0], stepSize):
-    for x in xrange(0, image.shape[1], stepSize):
+    for x in xrange(0+marginX, image.shape[1]-marginX, stepSize):
       # yield the current window
       yield (x, y, image[y:y + windowSize[1], x:x + windowSize[0]])
 
@@ -197,6 +206,9 @@ def main(argv=None):  # pylint: disable=unused-argument
     print('training labels: ' + str(len(train_labels)))
     print('test labels: ' + str(len(test_labels)))
 
+    VALIDATION_SIZE = int(len(train_labels) / 3)
+    print('validation size: ' + str(VALIDATION_SIZE))
+
     # Generate a validation set.
     validation_data = train_data[:VALIDATION_SIZE, ...]
     validation_labels = train_labels[:VALIDATION_SIZE]
@@ -225,18 +237,18 @@ def main(argv=None):  # pylint: disable=unused-argument
                           seed=SEED))
   conv1_biases = tf.Variable(tf.zeros([32]))
   conv2_weights = tf.Variable(
-      tf.truncated_normal([5, 5, 32, 64],
+      tf.truncated_normal([5, 5, 32, 64], # was ok with 64
                           stddev=0.1,
                           seed=SEED))
   conv2_biases = tf.Variable(tf.constant(0.1, shape=[64]))
   fc1_weights = tf.Variable(  # fully connected, depth 512.
       tf.truncated_normal(
-          [IMAGE_SIZE // 4 * IMAGE_SIZE // 4 * 64, 512],
+          [IMAGE_SIZE // 4 * IMAGE_SIZE // 4 * 64, 256], # was ok with 512
           stddev=0.1,
           seed=SEED))
-  fc1_biases = tf.Variable(tf.constant(0.1, shape=[512]))
+  fc1_biases = tf.Variable(tf.constant(0.1, shape=[256]))
   fc2_weights = tf.Variable(
-      tf.truncated_normal([512, NUM_LABELS],
+      tf.truncated_normal([256, NUM_LABELS],
                           stddev=0.1,
                           seed=SEED))
   fc2_biases = tf.Variable(tf.constant(0.1, shape=[NUM_LABELS]))
@@ -404,14 +416,14 @@ def main(argv=None):  # pylint: disable=unused-argument
           predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
           # print (predictions)
           # time.sleep(2)
-          if predictions[0][1] > predictions[0][0] and predictions[0][1] > 0.999:
+          if predictions[0][1] > predictions[0][0] and predictions[0][1] > 0.6:
             # clone = image.copy()
             # print (predictions[0][1])
-            handX.append(x * predictions[0][1])
-            handY.append(y * predictions[0][1])
-            cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 255*predictions[0][1], 0), 1)
+            handX.append(x )
+            handY.append(y )
+            # cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 255*predictions[0][1], 0), 1)
 
-        if len(handX)>2:
+        if len(handX)>0:
           x = int(numpy.average(handX))
           y = int(numpy.average(handY))
           cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 0, 255), 1)
