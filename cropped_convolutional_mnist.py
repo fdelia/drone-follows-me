@@ -35,18 +35,24 @@ from six.moves import urllib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 
+import cv2
+
+# remove alpha channel with this
+# gm convert -background color -extent 0x0 +matte src.png dst.png
+
 IMAGE_SIZE = 40
 NUM_CHANNELS = 3
 PIXEL_DEPTH = 255
 NUM_LABELS = 2
-VALIDATION_SIZE = 100  # Size of the validation set.
+VALIDATION_SIZE = 1000  # Size of the validation set.
+TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
 BATCH_SIZE = 50 # 64
-NUM_EPOCHS = 100
+NUM_EPOCHS = 10
 EVAL_BATCH_SIZE = 1 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 
-
+tf.app.flags.DEFINE_boolean('run_only', False, 'only run with activation images')
 tf.app.flags.DEFINE_boolean("self_test", False, "True if running a self test.")
 FLAGS = tf.app.flags.FLAGS
 
@@ -80,7 +86,7 @@ def get_images_and_labels(num_images):
       # im = tf.cast(im, tf.float32)
 
       if im.shape != (IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS):
-        print('wrong shape: '+filename)
+        print('    wrong shape: '+filename)
         # print(im.shape)
       else:
         images = numpy.append(images, [im])
@@ -96,7 +102,6 @@ def get_images_and_labels(num_images):
 
   print (len(images))
   images = (images - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
-  print(counter)
   images = images.reshape(counter, IMAGE_SIZE, IMAGE_SIZE, 3)
 
   labels = labels.astype(int)
@@ -107,7 +112,33 @@ def get_images_and_labels(num_images):
   return images, labels
 
 def special_images():
-  pass
+  filenames = [f for f in os.listdir('records_crop_sp') if os.path.isfile(os.path.join('records_crop_sp', f))]
+  images = []
+  counter = 0
+  for filename in filenames:
+    im = Image.open('records_crop_sp/'+filename)  # .convert("L")  # Convert to greyscale
+    im = numpy.asarray(im, numpy.float32)
+
+    if im.shape != (IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS):
+        print('      wrong shape (special image): '+filename)
+        print(im.shape)
+    else:
+      images = numpy.append(images, [im])
+      counter += 1
+
+  print ('special images found: ' + str(len(images)))
+  images = (images - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
+  images = images.reshape(counter, IMAGE_SIZE, IMAGE_SIZE, 3)
+  return images
+
+
+def sliding_window(image, stepSize, windowSize):
+  # slide a window across the image
+  for y in xrange(0, image.shape[0], stepSize):
+    for x in xrange(0, image.shape[1], stepSize):
+      # yield the current window
+      yield (x, y, image[y:y + windowSize[1], x:x + windowSize[0]])
+
 
 
 def extract_labels(filename, num_images):
@@ -143,7 +174,7 @@ def error_rate(predictions, labels):
 
 
 def main(argv=None):  # pylint: disable=unused-argument
-  if FLAGS.self_test:
+  if FLAGS.self_test or FLAGS.run_only:
     print('Running self-test.')
     train_data, train_labels = fake_data(256)
     validation_data, validation_labels = fake_data(EVAL_BATCH_SIZE)
@@ -151,8 +182,14 @@ def main(argv=None):  # pylint: disable=unused-argument
     num_epochs = 1
   else:
     # Extract it into numpy arrays.
-    train_data, train_labels = get_images_and_labels(8000)
-    test_data, test_labels = get_images_and_labels(300)
+    train_data, train_labels = get_images_and_labels(20*1000)
+
+    test_data = train_data[:TEST_SIZE, ...]
+    test_labels = train_labels[:TEST_SIZE, ...]
+
+    train_data = numpy.delete(train_data, range(1, TEST_SIZE), axis=0)
+    train_labels = numpy.delete(train_labels, range(1, TEST_SIZE), axis=0)
+
     print('training labels: ' + str(len(train_labels)))
     print('test labels: ' + str(len(test_labels)))
 
@@ -303,53 +340,89 @@ def main(argv=None):  # pylint: disable=unused-argument
   # Create a local session to run the training.
   start_time = time.time()
   saver = tf.train.Saver()
+
   with tf.Session() as sess:
     # Run all the initializers to prepare the trainable parameters.
     tf.initialize_all_variables().run()
     print('Initialized!')
-    # ckpt = tf.train.get_checkpoint_state('.')
-    # if ckpt and ckpt.model_checkpoint_path:
-    #         saver.restore(sess, ckpt.model_checkpoint_path)
 
-    # Loop through training steps.
-    for step in xrange(int(num_epochs * train_size) // BATCH_SIZE):
-      # Compute the offset of the current minibatch in the data.
-      # Note that we could use better randomization across epochs.
-      offset = (step * BATCH_SIZE) % (train_size - BATCH_SIZE)
-      batch_data = train_data[offset:(offset + BATCH_SIZE), ...]
-      batch_labels = train_labels[offset:(offset + BATCH_SIZE)]
-      # This dictionary maps the batch data (as a numpy array) to the
-      # node in the graph it should be fed to.
-      feed_dict = {train_data_node: batch_data,
-                   train_labels_node: batch_labels}
-      # Run the graph and fetch some of the nodes.
-      _, l, lr, predictions = sess.run(
-          [optimizer, loss, learning_rate, train_prediction],
-          feed_dict=feed_dict)
-      if step % EVAL_FREQUENCY == 0:
-        elapsed_time = time.time() - start_time
-        start_time = time.time()
 
-        print('Step %d (epoch %.2f), %.1f ms' %
-              (step, float(step) * BATCH_SIZE / train_size,
-               1000 * elapsed_time / EVAL_FREQUENCY))
-        print('Minibatch loss: %.3f, learning rate: %.6f' % (l, lr))
-        print('Minibatch error: %.1f%%' % error_rate(predictions, batch_labels))
-        print('Validation error: %.1f%%' % error_rate(
-            eval_in_batches(validation_data, sess), validation_labels))
-        sys.stdout.flush()
-    # Finally print the result!
-    test_error = error_rate(eval_in_batches(test_data, sess), test_labels)
-    print('Test error: %.1f%%' % test_error)
+    # Run only
+    if FLAGS.run_only:
+      print ('load checkpoint')
+      saver.restore(sess, "conv_mnist_model.ckpt")
 
-    save_path = saver.save(sess, "conv_mnist_model.ckpt")
-    print("Model saved in file: %s" % save_path)
+      # special_data = special_images()
+      # for data in special_data:
+      #   pred_spec = sess.run(eval_prediction, feed_dict={eval_data: [data]})
+      #   print(pred_spec)
 
-    if FLAGS.self_test:
-      print('test_error', test_error)
-      assert test_error == 0.0, 'expected 0.0 test_error, got %.2f' % (
-          test_error,)
+      image = cv2.imread('records/img_116.5.5_18.40.25.305.png')
+      (winW, winH) = (40, 40)
 
+      for (x, y, window) in sliding_window(image, stepSize=16, windowSize=(winW, winH)):
+        if window.shape[0] != winH or window.shape[1] != winW:
+          continue
+     
+        data = numpy.asarray(window, numpy.float32)
+        data = (data - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
+        data = data.reshape(1, IMAGE_SIZE, IMAGE_SIZE, 3)
+  
+        predictions = sess.run(eval_prediction, feed_dict={eval_data: data})
+        print (predictions)
+        if predictions[0][1] > predictions[0][0]:
+          clone = image.copy()
+          cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 255, 0), 2)
+          cv2.imshow("Window", clone)
+          cv2.waitKey(1)
+          time.sleep(2)
+          # break
+     
+
+
+
+    # Train
+    else:
+      # Loop through training steps.
+      for step in xrange(int(num_epochs * train_size) // BATCH_SIZE):
+        # Compute the offset of the current minibatch in the data.
+        # Note that we could use better randomization across epochs.
+        offset = (step * BATCH_SIZE) % (train_size - BATCH_SIZE)
+        batch_data = train_data[offset:(offset + BATCH_SIZE), ...]
+        batch_labels = train_labels[offset:(offset + BATCH_SIZE)]
+        # This dictionary maps the batch data (as a numpy array) to the
+        # node in the graph it should be fed to.
+        feed_dict = {train_data_node: batch_data,
+                     train_labels_node: batch_labels}
+        # Run the graph and fetch some of the nodes.
+        _, l, lr, predictions = sess.run(
+            [optimizer, loss, learning_rate, train_prediction],
+            feed_dict=feed_dict)
+        if step % EVAL_FREQUENCY == 0:
+          elapsed_time = time.time() - start_time
+          start_time = time.time()
+
+          print('Step %d (epoch %.2f), %.1f ms' %
+                (step, float(step) * BATCH_SIZE / train_size,
+                 1000 * elapsed_time / EVAL_FREQUENCY))
+          print('Minibatch loss: %.3f, learning rate: %.6f' % (l, lr))
+          print('Minibatch error: %.1f%%' % error_rate(predictions, batch_labels))
+          print('Validation error: %.1f%%' % error_rate(
+              eval_in_batches(validation_data, sess), validation_labels))
+          sys.stdout.flush()
+      # Finally print the result!
+      test_error = error_rate(eval_in_batches(test_data, sess), test_labels)
+      print('Test error: %.1f%%' % test_error)
+
+      save_path = saver.save(sess, "conv_mnist_model.ckpt")
+      print("Model saved in file: %s" % save_path)
+
+      if FLAGS.self_test:
+        print('test_error', test_error)
+        assert test_error == 0.0, 'expected 0.0 test_error, got %.2f' % (
+            test_error,)
+
+      
 
 if __name__ == '__main__':
   tf.app.run()

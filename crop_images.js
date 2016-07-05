@@ -16,6 +16,7 @@ var newDB = []
 DBdata = helpers.loadDatabase(DB_NAME);
 DBdata = shuffle(DBdata)
 
+console.log('DBdata: '+DBdata.length)
 for (var i = 0; i < DBdata.length; i++) {
 	var row = DBdata[i],
 		x, y, output
@@ -49,32 +50,35 @@ for (var i = 0; i < DBdata.length; i++) {
 			});
 		newDB.push(row[0] + ';' + output)
 
-		if (x < 64 && y < 30) {
-			x = 80
-			y = 32
+		// if (x < 64 && y < 30) {
+		// 	x = 80
+		// 	y = 32
 
-			gm('records/' + row[0])
-				.crop(40, 40, x, y)
-				.write("records_crop/2_" + row[0], function(err) {
-					if (!err) console.log('done');
-				});
-			newDB.push('2_' + row[0] + ';' + 0)
-		}
-		if (x < 64 && y < 30) {
-			x = 64
-			y = 32
+		// 	gm('records/' + row[0])
+		// 		.crop(40, 40, x, y)
+		// 		.write("records_crop/2_" + row[0], function(err) {
+		// 			if (!err) console.log('done');
+		// 		});
+		// 	newDB.push('2_' + row[0] + ';' + 0)
+		// }
+		// if (x < 64 && y < 30) {
+		// 	x = 64
+		// 	y = 32
 
-			gm('records/' + row[0])
-				.crop(40, 40, x, y)
-				.write("records_crop/2_" + row[0], function(err) {
-					if (!err) console.log('done');
-				});
-			newDB.push('2_' + row[0] + ';' + 0)
-		}
+		// 	gm('records/' + row[0])
+		// 		.crop(40, 40, x, y)
+		// 		.write("records_crop/2_" + row[0], function(err) {
+		// 			if (!err) console.log('done');
+		// 		});
+		// 	newDB.push('2_' + row[0] + ';' + 0)
+		// }
 	} catch (e) {
+		// always after 554 images there happens an TypeError: Cannot read property 'once' of undefined (in gm/lib/command.js:227)
 		console.log(e)
 		console.log(row)
 		dumpError(e)
+		console.log('in newDB: '+newDB.length)
+		process.exit(0)
 	}
 	// console.log(newDB.length)
 
