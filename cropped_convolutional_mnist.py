@@ -48,11 +48,12 @@ VALIDATION_SIZE = 1000  # Size of the validation set.
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
 BATCH_SIZE = 50 # 64
-NUM_EPOCHS = 10
-EVAL_BATCH_SIZE = 1 #64
+NUM_EPOCHS = 100
+EVAL_BATCH_SIZE = 50 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 
-tf.app.flags.DEFINE_boolean('run_only', False, 'only run with activation images')
+tf.app.flags.DEFINE_boolean('run_only', True, 'only run with activation images')
+
 tf.app.flags.DEFINE_boolean("self_test", False, "True if running a self test.")
 FLAGS = tf.app.flags.FLAGS
 
@@ -93,6 +94,8 @@ def get_images_and_labels(num_images):
         labels = numpy.append(labels, [label])
         counter += 1
 
+      if counter%100 == 0:
+        print('   loaded '+str(counter)+' images')
       # augmentation
       # im2 = tf.image.flip_left_right(im)
       # images = numpy.append(images, [im2])
@@ -116,6 +119,7 @@ def special_images():
   images = []
   counter = 0
   for filename in filenames:
+    print ('special: '+filename)
     im = Image.open('records_crop_sp/'+filename)  # .convert("L")  # Convert to greyscale
     im = numpy.asarray(im, numpy.float32)
 
@@ -126,9 +130,9 @@ def special_images():
       images = numpy.append(images, [im])
       counter += 1
 
-  print ('special images found: ' + str(len(images)))
+  print ('special images found: ' + str((counter)))
   images = (images - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
-  images = images.reshape(counter, IMAGE_SIZE, IMAGE_SIZE, 3)
+  images = images.reshape(counter, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS)
   return images
 
 
@@ -352,32 +356,64 @@ def main(argv=None):  # pylint: disable=unused-argument
       print ('load checkpoint')
       saver.restore(sess, "conv_mnist_model.ckpt")
 
-      # special_data = special_images()
-      # for data in special_data:
-      #   pred_spec = sess.run(eval_prediction, feed_dict={eval_data: [data]})
-      #   print(pred_spec)
+      eval_data = tf.placeholder(tf.float32, shape=(1, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS))
+      eval_prediction = tf.nn.softmax(model(eval_data))
 
-      image = cv2.imread('records/img_116.5.5_18.40.25.305.png')
-      (winW, winH) = (40, 40)
+      print('special 40x40 images')
+      special_data = special_images()
+      for data in special_data:
+        pred_spec = sess.run(eval_prediction, feed_dict={eval_data: [data]})
+        # print(pred_spec)
+        print(pred_spec.argmax(axis=1))
 
-      for (x, y, window) in sliding_window(image, stepSize=16, windowSize=(winW, winH)):
-        if window.shape[0] != winH or window.shape[1] != winW:
-          continue
-     
-        data = numpy.asarray(window, numpy.float32)
-        data = (data - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
-        data = data.reshape(1, IMAGE_SIZE, IMAGE_SIZE, 3)
-  
-        predictions = sess.run(eval_prediction, feed_dict={eval_data: data})
-        print (predictions)
-        if predictions[0][1] > predictions[0][0]:
-          clone = image.copy()
-          cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 255, 0), 2)
-          cv2.imshow("Window", clone)
-          cv2.waitKey(1)
-          time.sleep(2)
-          # break
-     
+      # image = cv2.imread('records/img_116.5.5_18.40.25.305.png')
+      def test_image_for_hand(filename):
+        image = cv2.imread('records/'+filename)
+
+        def chunks(l, n):
+          for i in range(0, len(l), n):
+            yield l[i:i+n]
+
+
+
+        (winW, winH) = (40, 40)
+
+        for (x, y, window) in sliding_window(image, stepSize=16, windowSize=(winW, winH)):
+          if window.shape[0] != winH or window.shape[1] != winW:
+            continue
+       
+          # cv2.imshow('test', window)
+          # cv2.waitKey(1)
+          im2 = numpy.asarray(window, numpy.float32).flatten()
+          im2 = chunks(im2, 3)
+
+          new_im2 = []
+          for rgb in im2:
+            new_im2.append(rgb[::-1])
+
+          data = numpy.asarray(new_im2, numpy.float32).reshape(IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS)
+
+          # data = numpy.asarray(window, numpy.float32)
+          data = (data - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
+          data = data.reshape(IMAGE_SIZE, IMAGE_SIZE, 3)
+
+
+
+          predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
+          print (predictions)
+          # print (predictions.argmax(axis=1))
+          # time.sleep(2)
+          if predictions[0][1] > predictions[0][0]:
+            clone = image.copy()
+            cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 255, 0), 2)
+            cv2.imshow('search for hand in '+filename, clone)
+            cv2.waitKey(1)
+            time.sleep(0.5)
+       
+      fs = ['img_116.5.5_18.40.25.305.png', 'img_142.png', 'img_14.4.4.73.png', 'img_14.4.15.145.png']
+      for filename in fs:
+        print (filename)
+        test_image_for_hand(filename)
 
 
 

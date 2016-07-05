@@ -57,7 +57,7 @@ for (var i = 0; i < DBdata.length; i++) {
 		// 	gm('records/' + row[0])
 		// 		.crop(40, 40, x, y)
 		// 		.write("records_crop/2_" + row[0], function(err) {
-		// 			if (!err) console.log('done');
+		// 			if (err) console.log(err);
 		// 		});
 		// 	newDB.push('2_' + row[0] + ';' + 0)
 		// }
@@ -68,7 +68,7 @@ for (var i = 0; i < DBdata.length; i++) {
 		// 	gm('records/' + row[0])
 		// 		.crop(40, 40, x, y)
 		// 		.write("records_crop/2_" + row[0], function(err) {
-		// 			if (!err) console.log('done');
+		// 			if (err) console.log(err);
 		// 		});
 		// 	newDB.push('2_' + row[0] + ';' + 0)
 		// }
