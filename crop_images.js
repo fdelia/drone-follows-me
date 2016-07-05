@@ -8,8 +8,6 @@ var helpers = require('./DroneHelpers.js')
 const DB_NAME = 'database.csv';
 const IMAGE_WIDTH = 128; // 128
 const IMAGE_HEIGHT = 72; // 72
-const DIVIDER_X = 5
-const DIVIDER_Y = 3
 
 
 

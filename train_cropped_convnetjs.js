@@ -4,7 +4,7 @@ const MAX_EPOCHS = 2
 const IMAGE_WIDTH = 40; // 128
 const IMAGE_HEIGHT = 40; // 72
 
-const REGRESSION_OUTPUT = false
+const REGRESSION_OUTPUT = false // maybe doesnt work with regression
 const DB_NAME = 'records_crop/_DB.csv';
 const OUTPUT_PARTS = 1; // number of ... (not active yet)
 
@@ -41,8 +41,8 @@ layer_defs.push({
 });
 layer_defs.push({
 	type: 'conv',
-	sx: 5,
-	filters: 960,
+	sx: 3,
+	filters: 48,
 	stride: 1,
 	pad: 2,
 	activation: 'relu'
@@ -55,7 +55,7 @@ layer_defs.push({
 layer_defs.push({
 	type: 'conv',
 	sx: 3,
-	filters: 720,
+	filters: 48	,
 	stride: 1,
 	pad: 2,
 	activation: 'relu'
@@ -65,44 +65,44 @@ layer_defs.push({
 	sx: 2,
 	stride: 2
 });
-layer_defs.push({
-	type: 'conv',
-	sx: 3,
-	filters: 600, // 32
-	stride: 1, // 2
-	pad: 2, // 
-	activation: 'relu'
-		// drop_prob: 0.5
-});
-layer_defs.push({
-	type: 'pool',
-	sx: 2, // 2
-	stride: 2 // 2
-});
-layer_defs.push({
-	type: 'conv',
-	sx: 3, // 4
-	filters: 480, // 32
-	stride: 1, // 2
-	pad: 2, // 
-	activation: 'relu'
-		// drop_prob: 0.7
-});
-layer_defs.push({
-	type: 'pool',
-	sx: 3, // 2
-	stride: 3
-});
-layer_defs.push({
-	type: 'fc',
-	num_neurons: 300, // 100, 200
-	activation: 'relu'
-});
+// layer_defs.push({
+// 	type: 'conv',
+// 	sx: 3,
+// 	filters: 30, // 32
+// 	stride: 1, // 2
+// 	pad: 2, // 
+// 	activation: 'relu'
+// 		// drop_prob: 0.5
+// });
+// layer_defs.push({
+// 	type: 'pool',
+// 	sx: 2, // 2
+// 	stride: 2 // 2
+// });
+// layer_defs.push({
+// 	type: 'conv',
+// 	sx: 3, // 4
+// 	filters: 30, // 32
+// 	stride: 1, // 2
+// 	pad: 2, // 
+// 	activation: 'relu'
+// 		// drop_prob: 0.7
+// });
+// layer_defs.push({
+// 	type: 'pool',
+// 	sx: 3, // 2
+// 	stride: 3
+// });
 layer_defs.push({
 	type: 'fc',
-	num_neurons: 300, // wasn't there
+	num_neurons: 32, // 100, 200
 	activation: 'relu'
 });
+// layer_defs.push({
+// 	type: 'fc',
+// 	num_neurons: 64, // wasn't there
+// 	activation: 'relu'
+// });
 
 if (REGRESSION_OUTPUT)
 	layer_defs.push({
@@ -125,11 +125,11 @@ net.makeLayers(layer_defs);
 // loadNetwork('saves/net_e5.txt')
 
 var trainer_options = {
-	method: 'adadelta',
+	method: 'adagrad',
 	// l1_decay: 0.001,
-	l2_decay: 0.0001, // 0.001
-	batch_size: 10,
-	learning_rate: 0.01 // 0.01
+	l2_decay: 0.01, // 0.001
+	batch_size: 50,
+	learning_rate: 0.001 // 0.01
 		// ,momentum: 0.9
 }
 var trainer = new convnetjs.SGDTrainer(net, trainer_options);
@@ -140,7 +140,7 @@ console.log('load image data')
 loadImages(DBdata).then(function() {
 	TestData = ImageData.splice(-1 * Math.round(ImageData.length / 6))
 
-	ImageData = helpers.augmentData(ImageData, REGRESSION_OUTPUT)
+	// ImageData = helpers.augmentData(ImageData, REGRESSION_OUTPUT)
 	ImageData = shuffle(ImageData)
 
 	console.log('\nTraining rows: ' + ImageData.length + ', Test rows: ' + TestData.length)
@@ -155,7 +155,7 @@ loadImages(DBdata).then(function() {
 			// try {
 			stats = trainer.train(ImageData[i][0], ImageData[i][1]);
 			// console.log(ImageData[i][1])
-			console.log(stats)
+			// console.log(stats)
 			if (! isFinite(stats.loss)) {
 				// console.log(ImageData[i])
 				console.log('loss == infinite at ' + i)
@@ -163,9 +163,9 @@ loadImages(DBdata).then(function() {
 			}
 
 			// augmentation, do it here to save memory
-			var t = helpers.flipHorizontally(ImageData[i], false, IMAGE_WIDTH, IMAGE_HEIGHT)
-				// console.log(t)
-			stats = trainer.train(t[0], t[1])
+			// var t = helpers.flipHorizontally(ImageData[i], false, IMAGE_WIDTH, IMAGE_HEIGHT)
+			// 	// console.log(t)
+			// stats = trainer.train(t[0], t[1])
 
 			// t = helpers.flipVertically(ImageData[i])
 			// stats = trainer.train(t[0], t[1])
@@ -186,7 +186,7 @@ loadImages(DBdata).then(function() {
 				console.log('    ' + (i + 1) + ' / ' + ImageData.length + ' images done   ...  ' + stats.loss + '')
 			}
 			if (i % 10 == 0 && i > 0) totalLoss += stats.loss
-			if (i % 10 == 0 && i > 0) {
+			if (i % 100 == 0 && i > 0) {
 				console.log(' ')
 				testNetwork(false);
 				console.log('   avg loss: ' + totalLoss / 100)
