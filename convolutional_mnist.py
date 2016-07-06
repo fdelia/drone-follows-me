@@ -37,27 +37,29 @@ import tensorflow as tf
 
 import cv2
 
+#
 # remove alpha channel with this
 # gm convert -background color -extent 0x0 +matte src.png dst.png
+#
 
 IMAGE_SIZE = 40
 NUM_CHANNELS = 3
 PIXEL_DEPTH = 255
 NUM_LABELS = 2
-# VALIDATION_SIZE = 200  # Size of the validation set.
+# VALIDATION_SIZE = 200  # Size of the validation set. / set as one third now
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
-BATCH_SIZE = 50 # 64
-NUM_EPOCHS = 30 # ok with 100
-EVAL_BATCH_SIZE = 50 #64
+BATCH_SIZE = 64 # 64
+NUM_EPOCHS = 10 # ok with 100
+EVAL_BATCH_SIZE = 64 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 
-tf.app.flags.DEFINE_boolean('run_only', False, 'only run with activation images')
+tf.app.flags.DEFINE_boolean('run_only', False, 'True = only activate images, False = train network')
 
 tf.app.flags.DEFINE_boolean("self_test", False, "True if running a self test.")
 FLAGS = tf.app.flags.FLAGS
 
-def get_images_and_labels(num_images):
+def get_images_and_labels(max_num_images):
   images = []
   labels = []
 
@@ -65,7 +67,7 @@ def get_images_and_labels(num_images):
   reader = csv.reader(f) 
   counter = 0
   for row in reader:   
-      if counter >= num_images:
+      if counter >= max_num_images:
         break
       
       filename, label = row[0].split(';')
@@ -96,7 +98,7 @@ def get_images_and_labels(num_images):
         labels = numpy.append(labels, [label])
         counter += 1
 
-        # augmentation
+        # augmentation, flip
         im2 = im_org.transpose(Image.FLIP_LEFT_RIGHT)
         im2 = numpy.asarray(im2, numpy.float32)
         # images = numpy.append(images, [im2])
@@ -104,13 +106,22 @@ def get_images_and_labels(num_images):
         labels = numpy.append(labels, [label])
         counter += 1        
 
-      if counter%100 == 0:
-        print('   loaded '+str(counter)+' images') 
+        # augmentation, rotate
+        im2 = im_org.rotate(90, expand=0)
+        im2 = numpy.asarray(im2, numpy.float32)
+        # images = numpy.append(images, [im2])
+        images.append(im2)
+        labels = numpy.append(labels, [label])
+        counter += 1                
+
+
+      if counter%1000 <= 3:
+        print('   loaded '+str(int(counter/1000)*1000)+' images') 
 
       # if counter>300:
       #   break       
 
-  print (len(images))
+  print('finally loaded '+str(len(images))+' images') 
   images = numpy.asarray(images, numpy.float32)
   images = (images - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
   images = images.reshape(counter, IMAGE_SIZE, IMAGE_SIZE, 3)
@@ -146,7 +157,7 @@ def special_images():
 
 def sliding_window(image, stepSize, windowSize):
   # slide a window across the image
-  marginX = 10
+  marginX = 12
   for y in xrange(0, image.shape[0], stepSize):
     for x in xrange(0+marginX, image.shape[1]-marginX, stepSize):
       # yield the current window
@@ -195,7 +206,7 @@ def main(argv=None):  # pylint: disable=unused-argument
     num_epochs = 1
   else:
     # Extract it into numpy arrays.
-    train_data, train_labels = get_images_and_labels(20*1000)
+    train_data, train_labels = get_images_and_labels(50*1000)
 
     test_data = train_data[:TEST_SIZE, ...]
     test_labels = train_labels[:TEST_SIZE, ...]
@@ -363,7 +374,7 @@ def main(argv=None):  # pylint: disable=unused-argument
     print('Initialized!')
 
 
-    # Run only
+    ##### Run only #####
     if FLAGS.run_only:
       print ('load checkpoint')
       saver.restore(sess, "conv_mnist_model.ckpt")
@@ -391,16 +402,17 @@ def main(argv=None):  # pylint: disable=unused-argument
         (winW, winH) = (IMAGE_SIZE, IMAGE_SIZE)
 
         clone = image.copy()
-        handX = []; handY = []
-        for (x, y, window) in sliding_window(image, stepSize=16, windowSize=(winW, winH)):
+        handX = []; handY = []; test = []
+        for (x, y, window) in sliding_window(image, stepSize=12, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
        
           # cv2.imshow('test', window)
           # cv2.waitKey(1)
+
+          # conversion opencv to PIL
           im2 = numpy.asarray(window, numpy.float32).flatten()
           im2 = chunks(im2, 3)
-
           new_im2 = []
           for rgb in im2:
             new_im2.append(rgb[::-1])
@@ -414,19 +426,59 @@ def main(argv=None):  # pylint: disable=unused-argument
 
 
           predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
-          # print (predictions)
-          # time.sleep(2)
-          if predictions[0][1] > predictions[0][0] and predictions[0][1] > 0.6:
+          
+          # TODO: use more data in bad light / special conditions, so that The prediction can be better
+          if predictions[0][1] > predictions[0][0] and predictions[0][1] > 0.95:
             # clone = image.copy()
             # print (predictions[0][1])
             handX.append(x )
             handY.append(y )
-            # cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 255*predictions[0][1], 0), 1)
+            test.append(predictions[0][1])
+            cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 128, 0), 1)
 
         if len(handX)>0:
+          # print(test)
+          # x = int(numpy.average(handX))
+          # y = int(numpy.average(handY))
+
+          # if len(handX)>2:
+          #   yDiff = numpy.absolute(numpy.asarray(handY) - y)
+          #   farLabel = yDiff.argmax(axis=0)
+          #   del handX[farLabel]
+          #   del handY[farLabel]
+
+          # if len(handX)>2:
+          #   yDiff = numpy.absolute(numpy.asarray(handY) - y)
+          #   farLabel = yDiff.argmax(axis=0)
+          #   del handX[farLabel]
+          #   del handY[farLabel]
+
+          # x = int(numpy.average(handX))
+          # y = int(numpy.average(handY))
+
+          # if len(handX)>2:
+          #   yDiff = numpy.absolute(numpy.asarray(handY) - y)
+          #   farLabel = yDiff.argmax(axis=0)
+          #   del handX[farLabel]
+          #   del handY[farLabel]
+
+          # if len(handX)>2:
+          #   yDiff = numpy.absolute(numpy.asarray(handY) - y)
+          #   farLabel = yDiff.argmax(axis=0)
+          #   del handX[farLabel]
+          #   del handY[farLabel]
+
           x = int(numpy.average(handX))
           y = int(numpy.average(handY))
-          cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 0, 255), 1)
+
+
+          # based on Person of Interest
+          yellow = (0, 255, 255)
+          cv2.rectangle(clone, (x, y), (x + winW, y + winH), yellow, 1)
+          cv2.line(clone, (int(x + winW/2), y), (int(x + winW/2), y + 4), yellow, 1)
+          cv2.line(clone, (int(x + winW/2), y + winH), (int(x + winW/2), y + winH - 4), yellow, 1)
+          cv2.line(clone, (x, int(y + winH/2)), (x+4, int(y + winH/2)), yellow, 1)
+          cv2.line(clone, (x + winW, int(y + winH/2)), (x + winW - 4, int(y + winH/2)), yellow, 1)
         cv2.imshow('search for hand', clone)
         cv2.waitKey(1)
         # time.sleep(3)
