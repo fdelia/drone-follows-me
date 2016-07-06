@@ -23,14 +23,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import gzip
+# import gzip
 import os
 import sys
 import time
 # import csv
 import random
 
-from PIL import Image 
+# from PIL import Image 
 from six.moves import urllib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
@@ -49,12 +49,15 @@ NUM_LABELS = 2
 # VALIDATION_SIZE = 200  # Size of the validation set. / set as one third now
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
-BATCH_SIZE = 64 # 64
+BATCH_SIZE = 32 # 64
 NUM_EPOCHS = 10 # ok with 100
-EVAL_BATCH_SIZE = 64 #64
+EVAL_BATCH_SIZE = 32 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
-
-tf.app.flags.DEFINE_boolean('run_only', False, 'True = only activate images, False = train network')
+  
+if 'train' in sys.argv:
+  tf.app.flags.DEFINE_boolean('run_only', False, 'True = only activate images, False = train network')
+else:
+  tf.app.flags.DEFINE_boolean('run_only', True, 'True = only activate images, False = train network')
 
 tf.app.flags.DEFINE_boolean("self_test", False, "True if running a self test.")
 FLAGS = tf.app.flags.FLAGS
@@ -118,28 +121,31 @@ def get_images_and_labels(max_num_images):
 
         # augmentation, flip vertically
         # im2 = im_org.transpose(Image.FLIP_LEFT_RIGHT)
-        im2 = cv2.flip(im,1)
+        im2 = cv2.flip(im_org,1)
         im2 = numpy.asarray(im2, numpy.float32)
         # images = numpy.append(images, [im2])
         images.append(im2)
         labels = numpy.append(labels, [label])
         counter += 1        
 
-        # augmentation, flip horizontally
+        # augmentation, rotate 180
         # im2 = cv2.flip(im,0)
-        # im2 = numpy.asarray(im2, numpy.float32)
-        # # images = numpy.append(images, [im2])
-        # images.append(im2)
-        # labels = numpy.append(labels, [label])
-        # counter += 1        
+        M = cv2.getRotationMatrix2D((IMAGE_SIZE/2, IMAGE_SIZE/2), 180, 1.0)
+        im2 = cv2.warpAffine(im_org, M, (IMAGE_SIZE, IMAGE_SIZE))
+        im2 = numpy.asarray(im2, numpy.float32)
+        # images = numpy.append(images, [im2])
+        images.append(im2)
+        labels = numpy.append(labels, [label])
+        counter += 1        
 
         # augmentation, rotate
-        # im2 = im_org.rotate(90, expand=0)
-        # im2 = numpy.asarray(im2, numpy.float32)
-        # # images = numpy.append(images, [im2])
-        # images.append(im2)
-        # labels = numpy.append(labels, [label])
-        # counter += 1                
+        # if label==1:
+        #   im2 = im_org.rotate(90, expand=0)
+        #   im2 = numpy.asarray(im2, numpy.float32)
+        #   # images = numpy.append(images, [im2])
+        #   images.append(im2)
+        #   labels = numpy.append(labels, [label])
+        #   counter += 1                
 
 
       if counter%1000 == 0:
@@ -164,26 +170,26 @@ def get_images_and_labels(max_num_images):
 
   return images, labels
 
-def special_images():
-  filenames = [f for f in os.listdir('records_crop_sp') if os.path.isfile(os.path.join('records_crop_sp', f))]
-  images = []
-  counter = 0
-  for filename in filenames:
-    print ('special: '+filename)
-    im = Image.open('records_crop_sp/'+filename)  # .convert("L")  # Convert to greyscale
-    im = numpy.asarray(im, numpy.float32)
+# def special_images():
+#   filenames = [f for f in os.listdir('records_crop_sp') if os.path.isfile(os.path.join('records_crop_sp', f))]
+#   images = []
+#   counter = 0
+#   for filename in filenames:
+#     print ('special: '+filename)
+#     im = Image.open('records_crop_sp/'+filename)  # .convert("L")  # Convert to greyscale
+#     im = numpy.asarray(im, numpy.float32)
 
-    if im.shape != (IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS):
-        print('      wrong shape (special image): '+filename)
-        print(im.shape)
-    else:
-      images = numpy.append(images, [im])
-      counter += 1
+#     if im.shape != (IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS):
+#         print('      wrong shape (special image): '+filename)
+#         print(im.shape)
+#     else:
+#       images = numpy.append(images, [im])
+#       counter += 1
 
-  print ('special images found: ' + str((counter)))
-  images = (images - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
-  images = images.reshape(counter, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS)
-  return images
+#   print ('special images found: ' + str((counter)))
+#   images = (images - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
+#   images = images.reshape(counter, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS)
+#   return images
 
 
 def sliding_window(image, stepSize, windowSize):
@@ -230,6 +236,7 @@ def error_rate(predictions, labels):
 
 def main(argv=None):  # pylint: disable=unused-argument
   if FLAGS.self_test or FLAGS.run_only:
+    if FLAGS.run_only: print ('run only')
     print('Running self-test.')
     train_data, train_labels = fake_data(256)
     validation_data, validation_labels = fake_data(EVAL_BATCH_SIZE)
@@ -433,7 +440,7 @@ def main(argv=None):  # pylint: disable=unused-argument
         (winW, winH) = (IMAGE_SIZE, IMAGE_SIZE)
 
         clone = image.copy()
-        handX = []; handY = []; test = []
+        handX = []; handY = []; posPreds = []
         for (x, y, window) in sliding_window(image, stepSize=12, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
@@ -442,63 +449,31 @@ def main(argv=None):  # pylint: disable=unused-argument
           # cv2.waitKey(1)
 
           # conversion opencv to PIL
-          im2 = numpy.asarray(window, numpy.float32).flatten()
-          im2 = chunks(im2, 3)
-          new_im2 = []
-          for rgb in im2:
-            new_im2.append(rgb[::-1])
+          # im2 = numpy.asarray(window, numpy.float32).flatten()
+          # im2 = chunks(im2, 3)
+          # new_im2 = []
+          # for rgb in im2:
+          #   new_im2.append(rgb[::-1])
 
-          data = numpy.asarray(new_im2, numpy.float32)
+          data = numpy.asarray(window, numpy.float32)
 
           # data = numpy.asarray(window, numpy.float32)
           data = (data - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
           data = data.reshape(IMAGE_SIZE, IMAGE_SIZE, 3)
 
-
-
           predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
           
-          # TODO: use more data in bad light / special conditions, so that The prediction can be better
-          if predictions[0][1] > predictions[0][0] and predictions[0][1] > 0.3:
+          # TODO: use more data in bad light / special conditions, so that the prediction can be better
+          if predictions[0][1] > predictions[0][0] and predictions[0][1] > 0.9:
             # clone = image.copy()
             # print (predictions[0][1])
             handX.append(x )
             handY.append(y )
-            test.append(predictions[0][1])
+            posPreds.append(predictions[0][1])
             cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 128, 0), 1)
 
         if len(handX)>0:
-          print(test)
-          # x = int(numpy.average(handX))
-          # y = int(numpy.average(handY))
-
-          # if len(handX)>2:
-          #   yDiff = numpy.absolute(numpy.asarray(handY) - y)
-          #   farLabel = yDiff.argmax(axis=0)
-          #   del handX[farLabel]
-          #   del handY[farLabel]
-
-          # if len(handX)>2:
-          #   yDiff = numpy.absolute(numpy.asarray(handY) - y)
-          #   farLabel = yDiff.argmax(axis=0)
-          #   del handX[farLabel]
-          #   del handY[farLabel]
-
-          # x = int(numpy.average(handX))
-          # y = int(numpy.average(handY))
-
-          # if len(handX)>2:
-          #   yDiff = numpy.absolute(numpy.asarray(handY) - y)
-          #   farLabel = yDiff.argmax(axis=0)
-          #   del handX[farLabel]
-          #   del handY[farLabel]
-
-          # if len(handX)>2:
-          #   yDiff = numpy.absolute(numpy.asarray(handY) - y)
-          #   farLabel = yDiff.argmax(axis=0)
-          #   del handX[farLabel]
-          #   del handY[farLabel]
-
+          # print(posPreds)
           x = int(numpy.mean(handX))
           y = int(numpy.mean(handY))
 
@@ -510,6 +485,7 @@ def main(argv=None):  # pylint: disable=unused-argument
           cv2.line(clone, (int(x + winW/2), y + winH), (int(x + winW/2), y + winH - 4), yellow, 1)
           cv2.line(clone, (x, int(y + winH/2)), (x+4, int(y + winH/2)), yellow, 1)
           cv2.line(clone, (x + winW, int(y + winH/2)), (x + winW - 4, int(y + winH/2)), yellow, 1)
+
         cv2.imshow('search for hand', clone)
         cv2.waitKey(1)
         # time.sleep(3)

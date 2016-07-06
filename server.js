@@ -10,18 +10,20 @@ var helpers = require('./DroneHelpers.js');
 app.use(express.static(__dirname + '/'));
 app.listen(process.env.PORT || 3000)
 
+var DB = helpers.loadDatabase(DB_NAME);
+var imagesInRecord = fs.readdirSync('records/').filter(hiddenFilesAndDirs);
+
+
 app.get('/set/', function(req, res) {
-	console.log(' ')
-	console.log(req.query);
+	// console.log(' ')
+	// console.log(req.query);
 	// Attention: asynchronous, could load same image again!
 	if (req.query.imageName && req.query.x !== undefined && req.query.y !== undefined) addToDatabase([req.query.imageName, req.query.x, req.query.y])
-	// console.log('add image with params to database, send next picture');
+		// console.log('add image with params to database, send next picture');
 
-	var DB = helpers.loadDatabase(DB_NAME);
 	var imagesInDB = DB.map(function(entry) {
 		return entry[0];
 	});
-	var imagesInRecord = fs.readdirSync('records/').filter(hiddenFilesAndDirs);
 
 	// remove images which are in DB
 	var imagesNotInDB = imagesInRecord.filter(notInDB);
@@ -51,13 +53,13 @@ app.get('/set/', function(req, res) {
 		return imagesInDB.indexOf(name) == -1;
 	}
 
-	function hiddenFilesAndDirs(name) {
-		if (name[0] == '.') return false;
-		if (name.indexOf('.png') > 0) return true;
-		return false;
-	}
 });
 
+function hiddenFilesAndDirs(name) {
+	if (name[0] == '.') return false;
+	if (name.indexOf('.png') > 0) return true;
+	return false;
+}
 // function loadDatabase() {
 // 	var lines = fs.readFileSync(DB_NAME, 'utf8').split('\n');
 // 	console.log('found ' + lines.length + ' rows in database');
@@ -75,6 +77,9 @@ function addToDatabase(entries) {
 		console.log(entries);
 		return;
 	}
+
+	DB.push(entries) // global var
+
 	fs.appendFile(DB_NAME, entries.join(';') + '\n', function(err) {
 		if (err) console.log(err);
 		else console.log(' saved img ' + entries[0]);
