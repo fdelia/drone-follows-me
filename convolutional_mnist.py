@@ -27,7 +27,8 @@ import gzip
 import os
 import sys
 import time
-import csv
+# import csv
+import random
 
 from PIL import Image 
 from six.moves import urllib
@@ -49,7 +50,7 @@ NUM_LABELS = 2
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
 BATCH_SIZE = 64 # 64
-NUM_EPOCHS = 15 # ok with 100
+NUM_EPOCHS = 10 # ok with 100
 EVAL_BATCH_SIZE = 64 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 
@@ -61,23 +62,41 @@ FLAGS = tf.app.flags.FLAGS
 def get_images_and_labels(max_num_images):
   images = []
   labels = []
+  filenameLabels = []
 
-  f = open('records_crop/_DB.csv', 'rb') 
-  reader = csv.reader(f) 
+  filenameLabels = [(f, 0) for f in os.listdir('records_crop/0/') if os.path.isfile(os.path.join('records_crop/0/', f))]
+  # DBlabels = [0] * len(filenames)
+  
+  temp =  [(f, 1) for f in os.listdir('records_crop/1/') if os.path.isfile(os.path.join('records_crop/1/', f))]
+  # DBlabels = DBlabels + [1] * len(temp_filenames)
+  
+  filenameLabels = filenameLabels + temp
+  random.shuffle(filenameLabels)
+
+  # f = open('records_crop/_DB.csv', 'rb') 
+  # reader = csv.reader(f) 
   counter = 0
-  for row in reader:   
+  # for row in reader: 
+  for filename, label in filenameLabels:
       if counter >= max_num_images:
         break
-      
-      filename, label = row[0].split(';')
-      if not filename or not label: 
-        print ("Error: missing image filename or label")
+
+      # print (str(label) + '   ' +filename)
+
+      # filename, label = row[0].split(';')
+      # if not filename or not label: 
+      #   print ("Error: missing image filename or label")
+      #   continue
+
+      if filename.find('.') == 0:
         continue
 
-      if not os.path.isfile('records_crop/'+filename):
+      path = 'records_crop/' + str(label) + '/' + filename
+      if not os.path.isfile(path):
         continue
 
-      im_org = Image.open('records_crop/'+filename)  # .convert("L")  # Convert to greyscale
+      # im_org = Image.open(path)  # .convert("L")  # Convert to greyscale
+      im_org = cv2.imread(path)
       im = numpy.asarray(im_org, numpy.float32)
       
       # queue = tf.train.string_input_producer([filename])
@@ -97,35 +116,48 @@ def get_images_and_labels(max_num_images):
         labels = numpy.append(labels, [label])
         counter += 1
 
-        # augmentation, flip
-        im2 = im_org.transpose(Image.FLIP_LEFT_RIGHT)
+        # augmentation, flip vertically
+        # im2 = im_org.transpose(Image.FLIP_LEFT_RIGHT)
+        im2 = cv2.flip(im,1)
         im2 = numpy.asarray(im2, numpy.float32)
         # images = numpy.append(images, [im2])
         images.append(im2)
         labels = numpy.append(labels, [label])
         counter += 1        
 
+        # augmentation, flip horizontally
+        # im2 = cv2.flip(im,0)
+        # im2 = numpy.asarray(im2, numpy.float32)
+        # # images = numpy.append(images, [im2])
+        # images.append(im2)
+        # labels = numpy.append(labels, [label])
+        # counter += 1        
+
         # augmentation, rotate
-        im2 = im_org.rotate(90, expand=0)
-        im2 = numpy.asarray(im2, numpy.float32)
-        # images = numpy.append(images, [im2])
-        images.append(im2)
-        labels = numpy.append(labels, [label])
-        counter += 1                
+        # im2 = im_org.rotate(90, expand=0)
+        # im2 = numpy.asarray(im2, numpy.float32)
+        # # images = numpy.append(images, [im2])
+        # images.append(im2)
+        # labels = numpy.append(labels, [label])
+        # counter += 1                
 
 
-      if counter%1000 <= 2:
+      if counter%1000 == 0:
         print('   loaded '+str(int(counter/1000)*1000)+' images') 
 
       # if counter>300:
       #   break       
 
+  if len(images) != len(labels):
+    raise ValueError ('len(images) != len(labels) , something went wrong!')
+
   print('finally loaded '+str(len(images))+' images') 
+
   images = numpy.asarray(images, numpy.float32)
   images = (images - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
   images = images.reshape(counter, IMAGE_SIZE, IMAGE_SIZE, 3)
 
-  labels = labels.astype(int)
+  labels = numpy.asarray(labels, numpy.int)
 
   # images = tf.to_float(np.array(images))
   # labels = np.array(labels)
