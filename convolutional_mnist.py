@@ -28,13 +28,12 @@ import os
 import sys
 import time
 import csv
-from PIL import Image 
 
-import numpy
+from PIL import Image 
 from six.moves import urllib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
-
+import numpy
 import cv2
 
 #
@@ -50,7 +49,7 @@ NUM_LABELS = 2
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
 BATCH_SIZE = 64 # 64
-NUM_EPOCHS = 10 # ok with 100
+NUM_EPOCHS = 15 # ok with 100
 EVAL_BATCH_SIZE = 64 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 
@@ -115,7 +114,7 @@ def get_images_and_labels(max_num_images):
         counter += 1                
 
 
-      if counter%1000 <= 3:
+      if counter%1000 <= 2:
         print('   loaded '+str(int(counter/1000)*1000)+' images') 
 
       # if counter>300:
@@ -254,12 +253,12 @@ def main(argv=None):  # pylint: disable=unused-argument
   conv2_biases = tf.Variable(tf.constant(0.1, shape=[64]))
   fc1_weights = tf.Variable(  # fully connected, depth 512.
       tf.truncated_normal(
-          [IMAGE_SIZE // 4 * IMAGE_SIZE // 4 * 64, 256], # was ok with 512
+          [IMAGE_SIZE // 4 * IMAGE_SIZE // 4 * 64, 512], # was ok with 512
           stddev=0.1,
           seed=SEED))
-  fc1_biases = tf.Variable(tf.constant(0.1, shape=[256]))
+  fc1_biases = tf.Variable(tf.constant(0.1, shape=[512]))
   fc2_weights = tf.Variable(
-      tf.truncated_normal([256, NUM_LABELS],
+      tf.truncated_normal([512, NUM_LABELS],
                           stddev=0.1,
                           seed=SEED))
   fc2_biases = tf.Variable(tf.constant(0.1, shape=[NUM_LABELS]))
@@ -428,7 +427,7 @@ def main(argv=None):  # pylint: disable=unused-argument
           predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
           
           # TODO: use more data in bad light / special conditions, so that The prediction can be better
-          if predictions[0][1] > predictions[0][0] and predictions[0][1] > 0.95:
+          if predictions[0][1] > predictions[0][0] and predictions[0][1] > 0.3:
             # clone = image.copy()
             # print (predictions[0][1])
             handX.append(x )
@@ -437,7 +436,7 @@ def main(argv=None):  # pylint: disable=unused-argument
             cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 128, 0), 1)
 
         if len(handX)>0:
-          # print(test)
+          print(test)
           # x = int(numpy.average(handX))
           # y = int(numpy.average(handY))
 
@@ -468,8 +467,8 @@ def main(argv=None):  # pylint: disable=unused-argument
           #   del handX[farLabel]
           #   del handY[farLabel]
 
-          x = int(numpy.average(handX))
-          y = int(numpy.average(handY))
+          x = int(numpy.mean(handX))
+          y = int(numpy.mean(handY))
 
 
           # based on Person of Interest

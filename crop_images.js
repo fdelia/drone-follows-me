@@ -107,7 +107,7 @@ console.log('DBdata: ' + DBdata.length)
 
 
 function saveDB() {
-	return 0
+	// return 0
 	var DBstr = newDB.join('\n')
 	fs.writeFileSync('records_crop/_DB.csv', DBstr)
 	console.log('save DB, having ' + newDB.length + ' rows')
