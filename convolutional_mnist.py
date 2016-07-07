@@ -49,9 +49,9 @@ NUM_LABELS = 2
 # VALIDATION_SIZE = 200  # Size of the validation set. / set as one third now
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
-BATCH_SIZE = 32 # 64
+BATCH_SIZE = 64 # 64
 NUM_EPOCHS = 10 # ok with 100
-EVAL_BATCH_SIZE = 32 #64
+EVAL_BATCH_SIZE = 64 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
   
 if 'train' in sys.argv:
@@ -464,7 +464,7 @@ def main(argv=None):  # pylint: disable=unused-argument
           predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
           
           # TODO: use more data in bad light / special conditions, so that the prediction can be better
-          if predictions[0][1] > predictions[0][0] and predictions[0][1] > 0.9:
+          if predictions[0][1] > predictions[0][0]:# and predictions[0][1] > 0.1:
             # clone = image.copy()
             # print (predictions[0][1])
             handX.append(x )

@@ -15,9 +15,9 @@ reader = csv.reader(f, delimiter=';')
 counter = 0
 for row in reader:
 	# activate this because of memory problem (??? cv2.imread returns None), first do one half then the other
-	# if counter < 4000:
-	# 	counter += 1
-	# 	continue
+	if counter < 5000:
+		counter += 1
+		continue
 		
 	filename, dbX, dbY = row
 
@@ -41,7 +41,22 @@ for row in reader:
   		print ('wrong shape for image '+filename)
   		continue
 
+
+
   	if dbX >= 0 and dbY >= 0:
+  		# special face files
+  		if filename.find('img_116.6.7_21') == 0:
+  			# we will take a 72x72 part and resize it to 40x40
+  			print ('special face image detected')
+  			x = dbX / 5 -36
+  			y = 0
+  			crop = img[y : y + 72, x : x + 72]
+  			crop = cv2.resize(crop, (40, 40))
+  			cv2.imwrite('records_crop/0/'+filename, crop)	
+  			continue
+
+
+
   		x = dbX / 5 - 20
   		y = dbY / 5 - 20
 
@@ -50,6 +65,9 @@ for row in reader:
 
   		crop = img[y : y + winY, x : x + winX]
   		cv2.imwrite('records_crop/1/'+filename, crop)
+
+
+
 
   	else:
   		if filename.find('img_116.6.6_19.12') == 0:

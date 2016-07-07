@@ -17,7 +17,7 @@ pngStream.on('data', function(data) {
 			return console.log(err);
 		} else {
 			// console.log("png saved");
-			if (imgCounter == 1) console.log('*** START! ***')
+			if (imgCounter == 1) console.log('\n***\n*** START! ***\n***')
 			imgCounter++;
 		}
 
