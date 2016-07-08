@@ -53,6 +53,7 @@ BATCH_SIZE = 64 # 64
 NUM_EPOCHS = 10 # ok with 100
 EVAL_BATCH_SIZE = 64 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
+WEBCAM_MULT = 5 # multiplier for webcam resolution (higher = better, 1 = 128x72)
   
 if 'train' in sys.argv:
   tf.app.flags.DEFINE_boolean('run_only', False, 'True = only activate images, False = train network')
@@ -194,7 +195,7 @@ def get_images_and_labels(max_num_images):
 
 def sliding_window(image, stepSize, windowSize):
   # slide a window across the image
-  marginX = 12
+  marginX = 8 * WEBCAM_MULT
   for y in xrange(0, image.shape[0], stepSize):
     for x in xrange(0+marginX, image.shape[1]-marginX, stepSize):
       # yield the current window
@@ -431,17 +432,17 @@ def main(argv=None):  # pylint: disable=unused-argument
         # image = cv2.imread('records/'+filename)
 
 
-        def chunks(l, n):
-          for i in range(0, len(l), n):
-            yield l[i:i+n]
+        # def chunks(l, n):
+        #   for i in range(0, len(l), n):
+        #     yield l[i:i+n]
 
 
 
-        (winW, winH) = (IMAGE_SIZE, IMAGE_SIZE)
+        (winW, winH) = (IMAGE_SIZE * WEBCAM_MULT, IMAGE_SIZE * WEBCAM_MULT)
 
         clone = image.copy()
         handX = []; handY = []; posPreds = []
-        for (x, y, window) in sliding_window(image, stepSize=12, windowSize=(winW, winH)):
+        for (x, y, window) in sliding_window(image, stepSize=12 * WEBCAM_MULT, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
        
@@ -455,6 +456,7 @@ def main(argv=None):  # pylint: disable=unused-argument
           # for rgb in im2:
           #   new_im2.append(rgb[::-1])
 
+          if WEBCAM_MULT > 1: window = cv2.resize(window, (40, 40))
           data = numpy.asarray(window, numpy.float32)
 
           # data = numpy.asarray(window, numpy.float32)
@@ -501,7 +503,7 @@ def main(argv=None):  # pylint: disable=unused-argument
       while True:
           # Capture frame-by-frame
           ret, frame = video_capture.read()
-          frame = cv2.resize(frame, (128, 72))
+          frame = cv2.resize(frame, (128 * WEBCAM_MULT, 72 * WEBCAM_MULT))
           test_image_for_hand(frame)
 
 
