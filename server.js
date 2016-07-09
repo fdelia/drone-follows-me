@@ -17,9 +17,10 @@ var imagesInRecord = fs.readdirSync('records/').filter(hiddenFilesAndDirs);
 app.get('/set/', function(req, res) {
 	// console.log(' ')
 	// console.log(req.query);
+
 	// Attention: asynchronous, could load same image again!
-	if (req.query.imageName && req.query.x !== undefined && req.query.y !== undefined) addToDatabase([req.query.imageName, req.query.x, req.query.y])
-		// console.log('add image with params to database, send next picture');
+	if (req.query.imageName && req.query.x !== undefined && req.query.y !== undefined)
+		addToDatabase([req.query.imageName, req.query.x, req.query.y])
 
 	var imagesInDB = DB.map(function(entry) {
 		return entry[0];
@@ -28,9 +29,9 @@ app.get('/set/', function(req, res) {
 	// remove images which are in DB
 	var imagesNotInDB = imagesInRecord.filter(notInDB);
 
-	console.log('progress: ' + (Math.round(imagesInDB.length / imagesInRecord.length * 1000) / 10) + ' %  ' + 'images left: ' + imagesNotInDB.length)
-		// console.log('images left: ' + imagesNotInDB.length);
-		// var newImage = imagesNotInDB[Math.floor(Math.random() * imagesNotInDB.length)];
+	console.log('images left: ' + imagesNotInDB.length)
+
+	// var newImage = imagesNotInDB[Math.floor(Math.random() * imagesNotInDB.length)];
 
 	// var newImage = imagesNotInDB[0];
 	// // if save is too slow, don't use the same image again
@@ -55,27 +56,23 @@ app.get('/set/', function(req, res) {
 
 });
 
+
 function hiddenFilesAndDirs(name) {
 	if (name[0] == '.') return false;
 	if (name.indexOf('.png') > 0) return true;
 	return false;
 }
-// function loadDatabase() {
-// 	var lines = fs.readFileSync(DB_NAME, 'utf8').split('\n');
-// 	console.log('found ' + lines.length + ' rows in database');
-
-// 	var data = lines.map(function(line) {
-// 		return line.split(';');
-// 	});
-
-// 	return data;
-// }
 
 function addToDatabase(entries) {
 	if (!entries[0]) {
 		console.log('error, entries are: ');
 		console.log(entries);
 		return;
+	}
+
+	if (entries[1] >= 0) {
+		console.log('ATTENTION: saving as "label 2"/fist!')
+		entries.push('fist')
 	}
 
 	DB.push(entries) // global var

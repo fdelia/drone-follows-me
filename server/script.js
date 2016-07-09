@@ -12,8 +12,14 @@ $(function() {
 	var newImages = url('?').newImages.split(',');
 	console.log(newImages);
 	setImage(newImages.shift());
-	// console.log(imagePath);
-	// $('#image').attr('src', imagePath);
+	
+	// preload images
+	var imgArray = []
+	for (var i=0; i<newImages; i++){
+		imgArray[i] = new Image();
+		imgArray[i].src = '../records/' + imageName;
+	}
+
 
 	$('#image').click(function(e) {
 		console.log(e.pageX + ' ' + e.pageY);
@@ -30,7 +36,7 @@ $(function() {
 
 	function setImage(imageName) {
 		var imagePath = '../records/' + imageName;
-		console.log(imagePath);
+		// console.log(imagePath);
 		currentImage = imageName;
 		$('#image').attr('src', imagePath);
 	}

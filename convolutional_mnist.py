@@ -45,7 +45,7 @@ import cv2
 IMAGE_SIZE = 40
 NUM_CHANNELS = 3
 PIXEL_DEPTH = 255
-NUM_LABELS = 2
+NUM_LABELS = 3
 # VALIDATION_SIZE = 200  # Size of the validation set. / set as one third now
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
@@ -69,18 +69,16 @@ def get_images_and_labels(max_num_images):
   filenameLabels = []
 
   filenameLabels = [(f, 0) for f in os.listdir('records_crop/0/') if os.path.isfile(os.path.join('records_crop/0/', f))]
-  # DBlabels = [0] * len(filenames)
   
   temp =  [(f, 1) for f in os.listdir('records_crop/1/') if os.path.isfile(os.path.join('records_crop/1/', f))]
-  # DBlabels = DBlabels + [1] * len(temp_filenames)
-  
   filenameLabels = filenameLabels + temp
+
+  temp =  [(f, 2) for f in os.listdir('records_crop/2/') if os.path.isfile(os.path.join('records_crop/2/', f))]
+  filenameLabels = filenameLabels + temp
+  
   random.shuffle(filenameLabels)
 
-  # f = open('records_crop/_DB.csv', 'rb') 
-  # reader = csv.reader(f) 
   counter = 0
-  # for row in reader: 
   for filename, label in filenameLabels:
       if counter >= max_num_images:
         break
@@ -121,25 +119,21 @@ def get_images_and_labels(max_num_images):
         counter += 1
 
         # augmentation, flip vertically
-        # im2 = im_org.transpose(Image.FLIP_LEFT_RIGHT)
         im2 = cv2.flip(im_org,1)
         im2 = numpy.asarray(im2, numpy.float32)
-        # images = numpy.append(images, [im2])
         images.append(im2)
         labels = numpy.append(labels, [label])
         counter += 1        
 
         # augmentation, rotate 180
-        # im2 = cv2.flip(im,0)
         M = cv2.getRotationMatrix2D((IMAGE_SIZE/2, IMAGE_SIZE/2), 180, 1.0)
         im2 = cv2.warpAffine(im_org, M, (IMAGE_SIZE, IMAGE_SIZE))
         im2 = numpy.asarray(im2, numpy.float32)
-        # images = numpy.append(images, [im2])
         images.append(im2)
         labels = numpy.append(labels, [label])
         counter += 1        
 
-        # augmentation, rotate
+        # augmentation, rotate 90
         # if label==1:
         #   im2 = im_org.rotate(90, expand=0)
         #   im2 = numpy.asarray(im2, numpy.float32)

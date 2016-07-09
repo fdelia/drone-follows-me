@@ -15,3 +15,8 @@ The idea is to make a drone follow a hand showed at the drone. It should also un
   * or translate the tensorflow CNN for NodeJs
 * Make more tests with the drone cam (it handels bad light worse than most webcams)
 * It still recognises an arm or a lot of skin as a hand
+
+## Bugs/problems of extern libraries
+* cv2.imread() only works for about 5000 images, then returns None
+* Node.Js async processes mostly queue and are processed at the end of the main process, not sure if controllable
+

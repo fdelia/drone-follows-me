@@ -5,29 +5,33 @@ DBdata = helpers.loadDatabase(DB_NAME);
 
 console.log('found ' + DBdata.length + ' images')
 var images = []
-var classCounterX = [0, 0, 0, 0]
-var classCounterY = [0, 0, 0, 0]
-var testCounter = 0;
+// var classCounterX = [0, 0, 0, 0]
+// var classCounterY = [0, 0, 0, 0]
+var classCounter = [0, 0, 0]
+// var testCounter = 0;
 for (var i = 0; i < DBdata.length; i++) {
 	var row = DBdata[i];
 	// console.log(row);
 
 	var output = getOutputValues(row)
 
-	if(isZeroArray(output)) classCounterX[3]++;
-	else {
-		classCounterX[isMax(output)]++;
-	}
+	// if(isZeroArray(output)) classCounterX[3]++;
+	// else {
+	// 	classCounterX[isMax(output)]++;
+	// }
 
 	// if (row[1]<160 && row[1] != -1) testCounter++;
 	// if (isZeroArray(output) && row[2] != -1){
 	// 	console.log(row)
 	// }
 
-	if (row[2] == -1) classCounterY[3]++;
-	else if (row[2] < 106) classCounterY[0]++;
-	else if (row[2] < 213) classCounterY[1]++;
-	else classCounterY[2]++;
+	if (row[2] == -1) classCounter[0]++;
+	else if (row[3] && row[3] == 'fist') classCounter[2]++
+	else classCounter[1]++
+	// if (row[2] == -1) classCounterY[3]++;
+	// else if (row[2] < 106) classCounterY[0]++;
+	// else if (row[2] < 213) classCounterY[1]++;
+	// else classCounterY[2]++;
 
 	if (row[1] == -1 && row[2] != -1) {
 		console.log('this image entry is wrong: ')
@@ -40,13 +44,16 @@ for (var i = 0; i < DBdata.length; i++) {
 		images.push(row[0]);
 }
 
-console.log('X: left, center, right, no hand')
-console.log(classCounterX)
+// console.log('X: left, center, right, no hand')
+// console.log(classCounterX)
 
-console.log('Y: top, center, bottom, no hand')
-console.log(classCounterY)
+// console.log('Y: top, center, bottom, no hand')
+// console.log(classCounterY)
 
-console.log('Test counter: '+testCounter)
+console.log('no hand, hand, fist')
+console.log(classCounter)
+
+// console.log('Test counter: '+testCounter)
 
 
 
