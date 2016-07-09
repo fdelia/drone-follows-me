@@ -16,7 +16,7 @@ counter = 0
 for row in reader:
   special_label = None
   # activate this because of memory problem (??? cv2.imread returns None), first do one half then the other
-  if counter < 5000:
+  if counter < 6000:
     counter += 1
     continue
     
@@ -69,7 +69,9 @@ for row in reader:
     y = dbY / 5 - winY/2
 
     if x >= 128 - winX: x = 128 - winX 
-    if y >= 72 - winY: y = 72 - winY    
+    if y >= 72 - winY: y = 72 - winY 
+    if x < 0: x = 0
+    if y < 0: y = 0   
 
     crop = img[y : y + winY, x : x + winX]
     

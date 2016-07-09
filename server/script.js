@@ -5,7 +5,7 @@ send in /set/?... request
 
 */
 $(function() {
-	console.log(url('?'));
+	// console.log(url('?'));
 	// var imageName = url('?').imageName;
 	// var imagePath = '../records/' + imageName;
 	var currentImage = '';
@@ -15,10 +15,12 @@ $(function() {
 	
 	// preload images
 	var imgArray = []
-	for (var i=0; i<newImages; i++){
+	for (var i=0; i<newImages.length; i++){
 		imgArray[i] = new Image();
+		var imageName = newImages[i];
 		imgArray[i].src = '../records/' + imageName;
 	}
+	console.log('preloaded images')
 
 
 	$('#image').click(function(e) {

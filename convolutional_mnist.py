@@ -435,7 +435,8 @@ def main(argv=None):  # pylint: disable=unused-argument
         (winW, winH) = (IMAGE_SIZE * WEBCAM_MULT, IMAGE_SIZE * WEBCAM_MULT)
 
         clone = image.copy()
-        handX = []; handY = []; posPreds = []
+        handX1 = []; handY1 = []; posPreds = []
+        handX2 = []; handY2 = []
         for (x, y, window) in sliding_window(image, stepSize=12 * WEBCAM_MULT, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
@@ -460,27 +461,37 @@ def main(argv=None):  # pylint: disable=unused-argument
           predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
           
           # TODO: use more data in bad light / special conditions, so that the prediction can be better
-          if predictions[0][1] > predictions[0][0]:# and predictions[0][1] > 0.1:
+          # if predictions[0][1] > predictions[0][0]:# and predictions[0][1] > 0.1:
+          if predictions[0].argmax(axis=0) == 1:
             # clone = image.copy()
             # print (predictions[0][1])
-            handX.append(x )
-            handY.append(y )
+            handX1.append(x )
+            handY1.append(y )
             posPreds.append(predictions[0][1])
-            cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 128, 0), 1)
+            cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 100, 100), 1)
 
-        if len(handX)>0:
+          if predictions[0].argmax(axis=0) == 2:
+            handX2.append(x )
+            handY2.append(y )
+            cv2.rectangle(clone, (x, y), (x + winW, y + winH), (100, 0, 100), 1)
+
+        if len(handX1)>0 or len(handX2)>0:
           # print(posPreds)
-          x = int(numpy.mean(handX))
-          y = int(numpy.mean(handY))
-
+          if len(handX1) > len(handX2):
+            x = int(numpy.mean(handX1))
+            y = int(numpy.mean(handY1))
+            color = (0, 255, 255) # yellow
+          else:
+            x = int(numpy.mean(handX2))
+            y = int(numpy.mean(handY2))
+            color = (255, 0, 255)
 
           # based on Person of Interest
-          yellow = (0, 255, 255)
-          cv2.rectangle(clone, (x, y), (x + winW, y + winH), yellow, 1)
-          cv2.line(clone, (int(x + winW/2), y), (int(x + winW/2), y + 4), yellow, 1)
-          cv2.line(clone, (int(x + winW/2), y + winH), (int(x + winW/2), y + winH - 4), yellow, 1)
-          cv2.line(clone, (x, int(y + winH/2)), (x+4, int(y + winH/2)), yellow, 1)
-          cv2.line(clone, (x + winW, int(y + winH/2)), (x + winW - 4, int(y + winH/2)), yellow, 1)
+          cv2.rectangle(clone, (x, y), (x + winW, y + winH), color, 1)
+          cv2.line(clone, (int(x + winW/2), y), (int(x + winW/2), y + 4), color, 1)
+          cv2.line(clone, (int(x + winW/2), y + winH), (int(x + winW/2), y + winH - 4), color, 1)
+          cv2.line(clone, (x, int(y + winH/2)), (x+4, int(y + winH/2)), color, 1)
+          cv2.line(clone, (x + winW, int(y + winH/2)), (x + winW - 4, int(y + winH/2)), color, 1)
 
         cv2.imshow('search for hand', clone)
         cv2.waitKey(1)
