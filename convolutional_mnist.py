@@ -13,12 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Simple, end-to-end, LeNet-5-like convolutional MNIST model example.
-
-This should achieve a test error of 0.7%. Please keep this model as simple and
-linear as possible, it is meant as a tutorial for simple convolutional models.
-Run with --self_test on the command line to execute a short self-test.
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -36,6 +30,7 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 import numpy
 import cv2
+import math
 
 #
 # remove alpha channel with this
@@ -45,7 +40,7 @@ import cv2
 IMAGE_SIZE = 40
 NUM_CHANNELS = 3
 PIXEL_DEPTH = 255
-NUM_LABELS = 3
+NUM_LABELS = 2
 # VALIDATION_SIZE = 200  # Size of the validation set. / set as one third now
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
@@ -55,13 +50,31 @@ EVAL_BATCH_SIZE = 64 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 WEBCAM_MULT = 5 # multiplier for webcam resolution (higher = better, 1 = 128x72)
   
+
+
+if 'train' in sys.argv and 'fly' in sys.argv:
+  print ("given 'train' and 'fly', can't do both, please choose one")
+  sys.exit(0)
+
 if 'train' in sys.argv:
   tf.app.flags.DEFINE_boolean('run_only', False, 'True = only activate images, False = train network')
 else:
   tf.app.flags.DEFINE_boolean('run_only', True, 'True = only activate images, False = train network')
 
+if 'fly' in sys.argv:
+  FLY_TEST = True
+  print ("Attention: Flying mode!")
+  # sys.path.append('')
+  import libardrone
+else:
+  FLY_TEST = False
+
 tf.app.flags.DEFINE_boolean("self_test", False, "True if running a self test.")
 FLAGS = tf.app.flags.FLAGS
+
+
+
+
 
 def get_images_and_labels(max_num_images):
   images = []
@@ -73,8 +86,8 @@ def get_images_and_labels(max_num_images):
   temp =  [(f, 1) for f in os.listdir('records_crop/1/') if os.path.isfile(os.path.join('records_crop/1/', f))]
   filenameLabels = filenameLabels + temp
 
-  temp =  [(f, 2) for f in os.listdir('records_crop/2/') if os.path.isfile(os.path.join('records_crop/2/', f))]
-  filenameLabels = filenameLabels + temp
+  # temp =  [(f, 2) for f in os.listdir('records_crop/2/') if os.path.isfile(os.path.join('records_crop/2/', f))]
+  # filenameLabels = filenameLabels + temp
   
   random.shuffle(filenameLabels)
 
@@ -109,38 +122,38 @@ def get_images_and_labels(max_num_images):
       # im = tf.cast(im, tf.float32)
 
       if im.shape != (IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS):
-        pass
+        continue
         # print('    wrong shape: '+filename)
         # print(im.shape)
-      else:
-        # images = numpy.append(images, [im])
-        images.append(im)
-        labels = numpy.append(labels, [label])
-        counter += 1
 
-        # augmentation, flip vertically
-        im2 = cv2.flip(im_org,1)
-        im2 = numpy.asarray(im2, numpy.float32)
-        images.append(im2)
-        labels = numpy.append(labels, [label])
-        counter += 1        
+      
+      images.append(im)
+      labels = numpy.append(labels, [label])
+      counter += 1
 
-        # augmentation, rotate 180
-        M = cv2.getRotationMatrix2D((IMAGE_SIZE/2, IMAGE_SIZE/2), 180, 1.0)
-        im2 = cv2.warpAffine(im_org, M, (IMAGE_SIZE, IMAGE_SIZE))
-        im2 = numpy.asarray(im2, numpy.float32)
-        images.append(im2)
-        labels = numpy.append(labels, [label])
-        counter += 1        
+      # augmentation, flip vertically
+      im2 = cv2.flip(im_org,1)
+      im2 = numpy.asarray(im2, numpy.float32)
+      images.append(im2)
+      labels = numpy.append(labels, [label])
+      counter += 1        
 
-        # augmentation, rotate 90
-        # if label==1:
-        #   im2 = im_org.rotate(90, expand=0)
-        #   im2 = numpy.asarray(im2, numpy.float32)
-        #   # images = numpy.append(images, [im2])
-        #   images.append(im2)
-        #   labels = numpy.append(labels, [label])
-        #   counter += 1                
+      # augmentation, rotate 180
+      M = cv2.getRotationMatrix2D((IMAGE_SIZE/2, IMAGE_SIZE/2), 180, 1.0)
+      im2 = cv2.warpAffine(im_org, M, (IMAGE_SIZE, IMAGE_SIZE))
+      im2 = numpy.asarray(im2, numpy.float32)
+      images.append(im2)
+      labels = numpy.append(labels, [label])
+      counter += 1        
+
+      # augmentation, rotate 90
+      # if label==1:
+      #   im2 = im_org.rotate(90, expand=0)
+      #   im2 = numpy.asarray(im2, numpy.float32)
+      #   # images = numpy.append(images, [im2])
+      #   images.append(im2)
+      #   labels = numpy.append(labels, [label])
+      #   counter += 1                
 
 
       if counter%1000 == 0:
@@ -165,36 +178,21 @@ def get_images_and_labels(max_num_images):
 
   return images, labels
 
-# def special_images():
-#   filenames = [f for f in os.listdir('records_crop_sp') if os.path.isfile(os.path.join('records_crop_sp', f))]
-#   images = []
-#   counter = 0
-#   for filename in filenames:
-#     print ('special: '+filename)
-#     im = Image.open('records_crop_sp/'+filename)  # .convert("L")  # Convert to greyscale
-#     im = numpy.asarray(im, numpy.float32)
-
-#     if im.shape != (IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS):
-#         print('      wrong shape (special image): '+filename)
-#         print(im.shape)
-#     else:
-#       images = numpy.append(images, [im])
-#       counter += 1
-
-#   print ('special images found: ' + str((counter)))
-#   images = (images - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
-#   images = images.reshape(counter, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS)
-#   return images
-
 
 def sliding_window(image, stepSize, windowSize):
   # slide a window across the image
-  marginX = 8 * WEBCAM_MULT
-  for y in xrange(0, image.shape[0], stepSize):
-    for x in xrange(0+marginX, image.shape[1]-marginX, stepSize):
-      # yield the current window
-      yield (x, y, image[y:y + windowSize[1], x:x + windowSize[0]])
 
+  # if FLY_TEST: 
+  #   marginX = 28 * WEBCAM_MULT # make it a 72x72 image by removing 28 pixels on left and right
+  # else: 
+  marginX = 0 * WEBCAM_MULT
+ 
+
+  for y in xrange(0, image.shape[0], stepSize):
+    for x in xrange(0 + marginX, image.shape[1] - marginX, stepSize): # it doesnt make sense to crop at x=640 ???
+      # yield the current window
+      # x -= int(windowSize[1] / 2)
+      yield (x, y, image[y:y + windowSize[1], x:x + windowSize[0]])
 
 
 def extract_labels(filename, num_images):
@@ -222,7 +220,6 @@ def fake_data(num_images):
 
 def error_rate(predictions, labels):
   """Return the error rate based on dense predictions and sparse labels."""
-  # print (numpy.argmax(predictions, 1))
   return 100.0 - (
       100.0 *
       numpy.sum(numpy.argmax(predictions, 1) == labels) /
@@ -230,9 +227,10 @@ def error_rate(predictions, labels):
 
 
 def main(argv=None):  # pylint: disable=unused-argument
-  if FLAGS.self_test or FLAGS.run_only:
-    if FLAGS.run_only: print ('run only')
-    print('Running self-test.')
+  if FLAGS.self_test or FLAGS.run_only or FLY_TEST:
+    if FLAGS.run_only: print ('Running on cam input.')
+    else: print('Running self-test.')
+
     train_data, train_labels = fake_data(256)
     validation_data, validation_labels = fake_data(EVAL_BATCH_SIZE)
     test_data, test_labels = fake_data(EVAL_BATCH_SIZE)
@@ -422,94 +420,164 @@ def main(argv=None):  # pylint: disable=unused-argument
       #   print(pred_spec.argmax(axis=1))
 
 
-      def test_image_for_hand(image):
-        # image = cv2.imread('records/'+filename)
-
-
-        # def chunks(l, n):
-        #   for i in range(0, len(l), n):
-        #     yield l[i:i+n]
-
-
-
+      def detect_hand_in_image(image):
         (winW, winH) = (IMAGE_SIZE * WEBCAM_MULT, IMAGE_SIZE * WEBCAM_MULT)
 
         clone = image.copy()
-        handX1 = []; handY1 = []; posPreds = []
-        handX2 = []; handY2 = []
-        for (x, y, window) in sliding_window(image, stepSize=12 * WEBCAM_MULT, windowSize=(winW, winH)):
+        handX1 = []; handY1 = []; posPreds1 = []; hand1_weights= []
+        handX2 = []; handY2 = []; posPreds2 = []
+
+        for (x, y, window) in sliding_window(image, stepSize=9 * WEBCAM_MULT, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
        
-          # cv2.imshow('test', window)
-          # cv2.waitKey(1)
-
-          # conversion opencv to PIL
-          # im2 = numpy.asarray(window, numpy.float32).flatten()
-          # im2 = chunks(im2, 3)
-          # new_im2 = []
-          # for rgb in im2:
-          #   new_im2.append(rgb[::-1])
-
           if WEBCAM_MULT > 1: window = cv2.resize(window, (40, 40))
-          data = numpy.asarray(window, numpy.float32)
 
-          # data = numpy.asarray(window, numpy.float32)
+          data = numpy.asarray(window, numpy.float32).reshape(IMAGE_SIZE, IMAGE_SIZE, 3)
           data = (data - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
-          data = data.reshape(IMAGE_SIZE, IMAGE_SIZE, 3)
+          # data = data.reshape(IMAGE_SIZE, IMAGE_SIZE, 3)
 
           predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
-          
+
           # TODO: use more data in bad light / special conditions, so that the prediction can be better
           # if predictions[0][1] > predictions[0][0]:# and predictions[0][1] > 0.1:
-          if predictions[0].argmax(axis=0) == 1:
-            # clone = image.copy()
-            # print (predictions[0][1])
+          if predictions[0].argmax(axis=0) == 1 and predictions[0][1] > 0.9:
             handX1.append(x )
             handY1.append(y )
-            posPreds.append(predictions[0][1])
+            hand1_weights.append(math.pow(predictions[0][1], 8))
+            # posPreds1.append(predictions[0][1])
             cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 100, 100), 1)
 
-          if predictions[0].argmax(axis=0) == 2:
-            handX2.append(x )
-            handY2.append(y )
-            cv2.rectangle(clone, (x, y), (x + winW, y + winH), (100, 0, 100), 1)
+          # if predictions[0].argmax(axis=0) == 2 and predictions[0][2] > 0.6:
+          #   handX2.append(x )
+          #   handY2.append(y )
+          #   posPreds2.append(predictions[0][2])
+          #   cv2.rectangle(clone, (x, y), (x + winW, y + winH), (100, 0, 100), 1)
 
         if len(handX1)>0 or len(handX2)>0:
-          # print(posPreds)
+          # print(hand1_weights)
           if len(handX1) > len(handX2):
-            x = int(numpy.mean(handX1))
-            y = int(numpy.mean(handY1))
+            x = int(numpy.average(handX1, weights= hand1_weights))
+            y = int(numpy.average(handY1, weights= hand1_weights))
             color = (0, 255, 255) # yellow
-          else:
-            x = int(numpy.mean(handX2))
-            y = int(numpy.mean(handY2))
-            color = (255, 0, 255)
+          # else:
+          #   x = int(numpy.mean(handX2))
+          #   y = int(numpy.mean(handY2))
+          #   color = (255, 0, 255)
 
           # based on Person of Interest
           cv2.rectangle(clone, (x, y), (x + winW, y + winH), color, 1)
-          cv2.line(clone, (int(x + winW/2), y), (int(x + winW/2), y + 4), color, 1)
-          cv2.line(clone, (int(x + winW/2), y + winH), (int(x + winW/2), y + winH - 4), color, 1)
-          cv2.line(clone, (x, int(y + winH/2)), (x+4, int(y + winH/2)), color, 1)
-          cv2.line(clone, (x + winW, int(y + winH/2)), (x + winW - 4, int(y + winH/2)), color, 1)
+          cv2.line(clone, (int(x + winW/2), y), (int(x + winW/2), y + 3*WEBCAM_MULT), color, 1)
+          cv2.line(clone, (int(x + winW/2), y + winH), (int(x + winW/2), y + winH - 3*WEBCAM_MULT), color, 1)
+          cv2.line(clone, (x, int(y + winH/2)), (x + 3*WEBCAM_MULT, int(y + winH/2)), color, 1)
+          cv2.line(clone, (x + winW, int(y + winH/2)), (x + winW - 3*WEBCAM_MULT, int(y + winH/2)), color, 1)
+        else:
+          x = -1
+          y = -1
 
+        # if not FLY_TEST:
         cv2.imshow('search for hand', clone)
-        cv2.waitKey(1)
-        # time.sleep(3)
+        key = cv2.waitKey(1)
+
+        if key == ord('c'):
+          return (False, False)
+        else:
+          return x, y
        
 
 
-      # fs = ['img_14.4.57.402.png', 'img_14.5.4.441.png', 'img_116.5.5_18.40.25.305.png', 'img_142.png', 'img_14.4.4.73.png', 'img_14.4.15.145.png', 'img_11.46.12.78.png', 'img_12.53.10.112.png', 'img_14.4.7.97.png']
-      # for filename in fs:
-      #   print (filename)
-      #   test_image_for_hand(filename)
-      video_capture = cv2.VideoCapture(0)
+      if FLY_TEST:
+        video_capture = cv2.VideoCapture('tcp://192.168.1.1:5555')
 
-      while True:
-          # Capture frame-by-frame
-          ret, frame = video_capture.read()
-          frame = cv2.resize(frame, (128 * WEBCAM_MULT, 72 * WEBCAM_MULT))
-          test_image_for_hand(frame)
+        drone = libardrone.ARDrone()
+        # drone.takeoff()
+        drone.speed = 0.1
+      else:
+        video_capture = cv2.VideoCapture(0)
+      # video_capture.set(5, 15)
+      # video_capture.set(3, 320)
+      # video_capture.set(4, 180)
+
+      voteX = 0; voteY = 0
+
+      running = True
+      while running:
+        # Capture frame-by-frame, drop some frames to get smaller lag on drone
+        if FLY_TEST:
+          video_capture.read()
+          video_capture.read()
+          video_capture.read()
+          video_capture.read()
+          video_capture.read()
+          video_capture.read()
+          # video_capture.read()
+          # video_capture.read()
+          # video_capture.read()
+        # else: 
+        #   video_capture.read()
+
+        ret, frame = video_capture.read()
+        # start = time.time()
+        frame = cv2.resize(frame, (128 * WEBCAM_MULT, 72 * WEBCAM_MULT))
+        x, y = detect_hand_in_image(frame)
+        # end = time.time()
+        # print (end - start)
+
+        if (x, y) == (False, False):
+          print('stopping')
+          running = False
+
+          if FLY_TEST:
+            drone.halt()
+
+          continue
+
+
+        if FLY_TEST:
+          if x >= 0:
+            x = int(x / WEBCAM_MULT)
+            y = int(y / WEBCAM_MULT)
+
+            x += 20
+            y += 20
+
+            # print (str(x) + ' / '+ str(y))
+
+
+            if x < 128/2 - 20:
+              if voteX < 0: voteX = 0
+              voteX += 1
+              # print('<- <-')
+            elif x > 128/2 + 20:
+              if voteX > 0: voteX = 0
+              voteX -= 1
+              # print('      -> ->')
+            else:
+              voteX = 0
+
+            if y < 72/2 - 8:
+              if voteY < 0: voteY = 0
+              voteY += 1
+              # print('                    ^^^^^^^')
+            elif y > 72/2 + 6:
+              if voteY > 0: voteY = 0
+              voteY -= 1
+              # print('              yyyy')
+            else:
+              voteY = 0
+
+            # drone.hover()
+
+
+            voteMargin = 2
+            if voteX >= voteMargin:
+              print('<- <-')
+            if voteX <= -voteMargin:
+              print('      -> ->')
+            if voteY >= voteMargin:
+              print('                    ^^^^^^')
+            if voteY <= -voteMargin:
+              print('              yyyyyy')
 
 
 

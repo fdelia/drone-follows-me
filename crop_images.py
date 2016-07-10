@@ -16,7 +16,7 @@ counter = 0
 for row in reader:
   special_label = None
   # activate this because of memory problem (??? cv2.imread returns None), first do one half then the other
-  if counter < 6000:
+  if counter < 5000:
     counter += 1
     continue
     
@@ -77,6 +77,15 @@ for row in reader:
     
     if special_label is None:
       cv2.imwrite('records_crop/1/'+filename, crop)
+
+      # try go get rid of arm
+      if y < 72 - 1.7 * winY:
+        y += int(winY * 0.7)
+        crop = img[y : y + winY, x : x + winX]
+        # cv2.imshow('no arm', crop)
+        # cv2.waitKey(100)
+        cv2.imwrite('records_crop/0/noArm_'+filename, crop)
+
     elif special_label == 'fist':
       print ('fist image detected')
       cv2.imwrite('records_crop/2/'+filename, crop)
