@@ -425,9 +425,9 @@ def main(argv=None):  # pylint: disable=unused-argument
 
         clone = image.copy()
         handX1 = []; handY1 = []; posPreds1 = []; hand1_weights= []
-        handX2 = []; handY2 = []; posPreds2 = []
+        # handX2 = []; handY2 = []; posPreds2 = []
 
-        for (x, y, window) in sliding_window(image, stepSize=9 * WEBCAM_MULT, windowSize=(winW, winH)):
+        for (x, y, window) in sliding_window(image, stepSize=12 * WEBCAM_MULT, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
        
@@ -441,11 +441,11 @@ def main(argv=None):  # pylint: disable=unused-argument
 
           # TODO: use more data in bad light / special conditions, so that the prediction can be better
           # if predictions[0][1] > predictions[0][0]:# and predictions[0][1] > 0.1:
-          if predictions[0].argmax(axis=0) == 1 and predictions[0][1] > 0.9:
+          if predictions[0].argmax(axis=0) == 1 and predictions[0][1] > 0.95:
             handX1.append(x )
             handY1.append(y )
-            hand1_weights.append(math.pow(predictions[0][1], 8))
-            # posPreds1.append(predictions[0][1])
+            hand1_weights.append(math.pow(predictions[0][1], 10))
+            # hand1_weights.append(predictions[0][1])
             cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 100, 100), 1)
 
           # if predictions[0].argmax(axis=0) == 2 and predictions[0][2] > 0.6:
@@ -454,12 +454,14 @@ def main(argv=None):  # pylint: disable=unused-argument
           #   posPreds2.append(predictions[0][2])
           #   cv2.rectangle(clone, (x, y), (x + winW, y + winH), (100, 0, 100), 1)
 
-        if len(handX1)>0 or len(handX2)>0:
+        if len(handX1)>0:# or len(handX2)>0:
           # print(hand1_weights)
-          if len(handX1) > len(handX2):
-            x = int(numpy.average(handX1, weights= hand1_weights))
-            y = int(numpy.average(handY1, weights= hand1_weights))
-            color = (0, 255, 255) # yellow
+          # if len(handX1) > len(handX2):
+          x = int(numpy.average(handX1, weights= hand1_weights))
+          y = int(numpy.average(handY1, weights= hand1_weights))
+          # x = int(numpy.mean(handX1))
+          # y = int(numpy.mean(handY1))
+          color = (0, 255, 255) # yellow
           # else:
           #   x = int(numpy.mean(handX2))
           #   y = int(numpy.mean(handY2))
