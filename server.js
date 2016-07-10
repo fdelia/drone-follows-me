@@ -70,10 +70,10 @@ function addToDatabase(entries) {
 		return;
 	}
 
-	if (entries[1] >= 0) {
-		console.log('ATTENTION: saving as "label 2"/fist!')
-		entries.push('fist')
-	}
+	// if (entries[1] >= 0) {
+	// 	console.log('ATTENTION: saving as "label 2"/fist!')
+	// 	entries.push('fist')
+	// }
 
 	DB.push(entries) // global var
 

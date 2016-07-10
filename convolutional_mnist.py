@@ -45,7 +45,7 @@ NUM_LABELS = 2
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
 BATCH_SIZE = 64 # 64
-NUM_EPOCHS = 10 # ok with 100
+NUM_EPOCHS = 10 # ok with 100, starts being ok with 15~20
 EVAL_BATCH_SIZE = 64 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
 WEBCAM_MULT = 5 # multiplier for webcam resolution (higher = better, 1 = 128x72)
@@ -427,7 +427,7 @@ def main(argv=None):  # pylint: disable=unused-argument
         handX1 = []; handY1 = []; posPreds1 = []; hand1_weights= []
         # handX2 = []; handY2 = []; posPreds2 = []
 
-        for (x, y, window) in sliding_window(image, stepSize=12 * WEBCAM_MULT, windowSize=(winW, winH)):
+        for (x, y, window) in sliding_window(image, stepSize=9 * WEBCAM_MULT, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
        
@@ -441,10 +441,10 @@ def main(argv=None):  # pylint: disable=unused-argument
 
           # TODO: use more data in bad light / special conditions, so that the prediction can be better
           # if predictions[0][1] > predictions[0][0]:# and predictions[0][1] > 0.1:
-          if predictions[0].argmax(axis=0) == 1 and predictions[0][1] > 0.95:
+          if predictions[0].argmax(axis=0) == 1 and predictions[0][1] > 0.9:
             handX1.append(x )
             handY1.append(y )
-            hand1_weights.append(math.pow(predictions[0][1], 10))
+            hand1_weights.append(math.pow(predictions[0][1], 12))
             # hand1_weights.append(predictions[0][1])
             cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 100, 100), 1)
 
