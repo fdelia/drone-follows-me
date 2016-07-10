@@ -96,13 +96,6 @@ def get_images_and_labels(max_num_images):
       if counter >= max_num_images:
         break
 
-      # print (str(label) + '   ' +filename)
-
-      # filename, label = row[0].split(';')
-      # if not filename or not label: 
-      #   print ("Error: missing image filename or label")
-      #   continue
-
       if filename.find('.') == 0:
         continue
 
@@ -139,12 +132,13 @@ def get_images_and_labels(max_num_images):
       counter += 1        
 
       # augmentation, rotate 180
-      M = cv2.getRotationMatrix2D((IMAGE_SIZE/2, IMAGE_SIZE/2), 180, 1.0)
-      im2 = cv2.warpAffine(im_org, M, (IMAGE_SIZE, IMAGE_SIZE))
-      im2 = numpy.asarray(im2, numpy.float32)
-      images.append(im2)
-      labels = numpy.append(labels, [label])
-      counter += 1        
+      if label==1:
+        M = cv2.getRotationMatrix2D((IMAGE_SIZE/2, IMAGE_SIZE/2), 180, 1.0)
+        im2 = cv2.warpAffine(im_org, M, (IMAGE_SIZE, IMAGE_SIZE))
+        im2 = numpy.asarray(im2, numpy.float32)
+        images.append(im2)
+        labels = numpy.append(labels, [label])
+        counter += 1        
 
       # augmentation, rotate 90
       # if label==1:
@@ -159,8 +153,6 @@ def get_images_and_labels(max_num_images):
       if counter%1000 == 0:
         print('   loaded '+str(int(counter/1000)*1000)+' images') 
 
-      # if counter>300:
-      #   break       
 
   if len(images) != len(labels):
     raise ValueError ('len(images) != len(labels) , something went wrong!')

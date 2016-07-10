@@ -63,6 +63,12 @@ for row in reader:
       crop = img[y : y + 72, x : x + 72]
       crop = cv2.resize(crop, (40, 40))
       cv2.imwrite('records_crop/0/'+filename, crop) 
+
+      y += 15
+      crop = img[y : y + 72, x : x + 72]
+      crop = cv2.resize(crop, (40, 40))
+      cv2.imwrite('records_crop/0/noFace_'+filename, crop) 
+      
       continue      
 
     x = dbX / 5 - winX/2
@@ -80,11 +86,17 @@ for row in reader:
 
       # try go get rid of arm
       if y < 72 - 1.7 * winY:
-        y += int(winY * 0.7)
-        crop = img[y : y + winY, x : x + winX]
+        y2 = y + int(winY * 0.7)
+        crop = img[y2 : y2 + winY, x : x + winX]
         # cv2.imshow('no arm', crop)
         # cv2.waitKey(100)
         cv2.imwrite('records_crop/0/noArm_'+filename, crop)
+
+      # augmentation
+      if y > winY/2:
+        y2 = y - int(winY/4)
+        crop = img[y2 : y2 + winY, x : x + winX]
+        cv2.imwrite('records_crop/1/handOnBottom'+filename, crop)        
 
     elif special_label == 'fist':
       print ('fist image detected')
