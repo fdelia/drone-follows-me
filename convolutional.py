@@ -45,10 +45,10 @@ NUM_LABELS = 2
 TEST_SIZE = 100  # Size of test set (at the end), is new data for the network
 SEED = 66478  # Set to None for random seed.
 BATCH_SIZE = 64 # 64
-NUM_EPOCHS = 20 # ok with 100, starts being ok with 15~20
+NUM_EPOCHS = 10 # ok with 100, starts being ok with 15~20
 EVAL_BATCH_SIZE = 64 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
-WEBCAM_MULT = 5 # multiplier for webcam resolution (higher = better, 1 = 128x72)
+WEBCAM_MULT = 2 # multiplier for webcam resolution (higher = better, 1 = 128x72)
   
 
 
@@ -85,6 +85,10 @@ def get_images_and_labels(max_num_images):
   
   temp =  [(f, 1) for f in os.listdir('records_crop/1/') if os.path.isfile(os.path.join('records_crop/1/', f))]
   filenameLabels = filenameLabels + temp
+
+  temp =  [(f, 0) for f in os.listdir('records_crop/0_gen/') if os.path.isfile(os.path.join('records_crop/1/', f))]
+  filenameLabels = filenameLabels + temp
+
 
   # temp =  [(f, 2) for f in os.listdir('records_crop/2/') if os.path.isfile(os.path.join('records_crop/2/', f))]
   # filenameLabels = filenameLabels + temp
@@ -133,8 +137,9 @@ def get_images_and_labels(max_num_images):
 
       # augmentation, rotate 180
       if label==0:
-        M = cv2.getRotationMatrix2D((IMAGE_SIZE/2, IMAGE_SIZE/2), 180, 1.0)
-        im2 = cv2.warpAffine(im_org, M, (IMAGE_SIZE, IMAGE_SIZE))
+        # M = cv2.getRotationMatrix2D((IMAGE_SIZE/2, IMAGE_SIZE/2), 180, 1.0)
+        # im2 = cv2.warpAffine(im_org, M, (IMAGE_SIZE, IMAGE_SIZE))
+        im2 = cv2.flip(im_org, -1)
         im2 = numpy.asarray(im2, numpy.float32)
         images.append(im2)
         labels = numpy.append(labels, [label])
@@ -436,8 +441,8 @@ def main(argv=None):  # pylint: disable=unused-argument
           if predictions[0].argmax(axis=0) == 1 and predictions[0][1] > 0.9:
             handX1.append(x )
             handY1.append(y )
-            hand1_weights.append(math.pow(predictions[0][1], 12))
-            # hand1_weights.append(predictions[0][1])
+            # hand1_weights.append(math.pow(predictions[0][1], 12))
+            hand1_weights.append(predictions[0][1])
             cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 100, 100), 1)
 
           # if predictions[0].argmax(axis=0) == 2 and predictions[0][2] > 0.6:
@@ -474,7 +479,7 @@ def main(argv=None):  # pylint: disable=unused-argument
         key = cv2.waitKey(1)
 
         if key == ord('c'):
-          return (False, False)
+          return (None, None)
         else:
           return x, y
        
@@ -488,6 +493,8 @@ def main(argv=None):  # pylint: disable=unused-argument
         drone.speed = 0.1
       else:
         video_capture = cv2.VideoCapture(0)
+        # video_capture = cv2.VideoCapture('video/IMG_4057.MOV.mov')
+        # video_capture = cv2.VideoCapture('video/Untitled_1.mov')
       # video_capture.set(5, 15)
       # video_capture.set(3, 320)
       # video_capture.set(4, 180)
@@ -511,14 +518,18 @@ def main(argv=None):  # pylint: disable=unused-argument
         # else: 
         #   video_capture.read()
 
+        # video_capture.read()
         ret, frame = video_capture.read()
+
+        # frame = cv2.flip(frame,-1)
+
         # start = time.time()
-        frame = cv2.resize(frame, (128 * WEBCAM_MULT, 72 * WEBCAM_MULT))
+        if WEBCAM_MULT > 1: frame = cv2.resize(frame, (128 * WEBCAM_MULT, 72 * WEBCAM_MULT))
         x, y = detect_hand_in_image(frame)
         # end = time.time()
         # print (end - start)
 
-        if (x, y) == (False, False):
+        if (x, y) == (None, None):
           print('stopping')
           running = False
 
