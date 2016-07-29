@@ -10,3 +10,6 @@ video/
 **/*.png
 **/*.jpg
 data_dir/
+*.ckpt
+*.meta
+test.py

@@ -76,7 +76,7 @@ def generate_image():
 # print('\n'.join([''.join(['{:4}'.format(item) for item in row]) 
 #       for row in pixels]))
 
-for i in range(0, 1000):
+for i in range(0, 2000):
 	pixels = generate_image()
 	pixels = np.asarray(pixels, np.uint8).reshape((width, height, 3))
 	# cv2.imshow('image', pixels)

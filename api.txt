@@ -1,0 +1,1 @@
+http://www.mapquestapi.com/staticmap/v4/getmap?key=nqvXTBkyKZnD7ccZIh5Vk2Axba9kwV5H&center=47.3769,8.5417&zoom=18&size=3840,3840&type=sat&imagetype=jpeg&pois=1,40.0986,-76.3988,-20,-20|orange-100,40.0692,-76.4012|green,40.0981,-76.3461|yellow-s,40.0697,-76.352

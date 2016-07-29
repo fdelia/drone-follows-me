@@ -48,7 +48,7 @@ BATCH_SIZE = 64 # 64
 NUM_EPOCHS = 10 # ok with 100, starts being ok with 15~20
 EVAL_BATCH_SIZE = 64 #64
 EVAL_FREQUENCY = 100  # Number of steps between evaluations.
-WEBCAM_MULT = 2 # multiplier for webcam resolution (higher = better, 1 = 128x72)
+WEBCAM_MULT = 5 # multiplier for webcam resolution (higher = better, 1 = 128x72)
   
 
 
@@ -86,9 +86,8 @@ def get_images_and_labels(max_num_images):
   temp =  [(f, 1) for f in os.listdir('records_crop/1/') if os.path.isfile(os.path.join('records_crop/1/', f))]
   filenameLabels = filenameLabels + temp
 
-  temp =  [(f, 0) for f in os.listdir('records_crop/0_gen/') if os.path.isfile(os.path.join('records_crop/1/', f))]
+  temp =  [(f, '0_gen') for f in os.listdir('records_crop/0_gen/') if os.path.isfile(os.path.join('records_crop/0_gen/', f))]
   filenameLabels = filenameLabels + temp
-
 
   # temp =  [(f, 2) for f in os.listdir('records_crop/2/') if os.path.isfile(os.path.join('records_crop/2/', f))]
   # filenameLabels = filenameLabels + temp
@@ -110,6 +109,8 @@ def get_images_and_labels(max_num_images):
       # im_org = Image.open(path)  # .convert("L")  # Convert to greyscale
       im_org = cv2.imread(path)
       im = numpy.asarray(im_org, numpy.float32)
+
+      if label == '0_gen': label = 0
       
       # queue = tf.train.string_input_producer([filename])
       # reader = tf.WholeFileReader()
@@ -178,15 +179,8 @@ def get_images_and_labels(max_num_images):
 
 def sliding_window(image, stepSize, windowSize):
   # slide a window across the image
-
-  # if FLY_TEST: 
-  #   marginX = 28 * WEBCAM_MULT # make it a 72x72 image by removing 28 pixels on left and right
-  # else: 
-  marginX = 0 * WEBCAM_MULT
- 
-
-  for y in xrange(0, image.shape[0], stepSize):
-    for x in xrange(0 + marginX, image.shape[1] - marginX, stepSize): # it doesnt make sense to crop at x=640 ???
+  for y in xrange(0, image.shape[0] - windowSize[1], stepSize):
+    for x in xrange(0, image.shape[1] - windowSize[0], stepSize): # it doesnt make sense to crop at x=640 ???
       # yield the current window
       # x -= int(windowSize[1] / 2)
       yield (x, y, image[y:y + windowSize[1], x:x + windowSize[0]])
@@ -417,24 +411,26 @@ def main(argv=None):  # pylint: disable=unused-argument
       #   print(pred_spec.argmax(axis=1))
 
 
-      def detect_hand_in_image(image):
-        (winW, winH) = (IMAGE_SIZE * WEBCAM_MULT, IMAGE_SIZE * WEBCAM_MULT)
+      def detect_hand_in_image(image, mult):
+        (winW, winH) = (IMAGE_SIZE * mult, IMAGE_SIZE * mult)
 
         clone = image.copy()
         handX1 = []; handY1 = []; posPreds1 = []; hand1_weights= []
         # handX2 = []; handY2 = []; posPreds2 = []
 
-        for (x, y, window) in sliding_window(image, stepSize=9 * WEBCAM_MULT, windowSize=(winW, winH)):
+        # use step size 9 for drone
+        for (x, y, window) in sliding_window(image, stepSize=10 * mult, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
        
-          if WEBCAM_MULT > 1: window = cv2.resize(window, (40, 40))
+          if mult > 1: window = cv2.resize(window, (IMAGE_SIZE, IMAGE_SIZE)) # (40, 40) 
 
-          data = numpy.asarray(window, numpy.float32).reshape(IMAGE_SIZE, IMAGE_SIZE, 3)
+          data = numpy.asarray(window, numpy.float32)#.reshape(IMAGE_SIZE, IMAGE_SIZE, 3)
           data = (data - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
           # data = data.reshape(IMAGE_SIZE, IMAGE_SIZE, 3)
 
           predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
+          # predictions = numpy.asarray([[1 , 0]])
 
           # TODO: use more data in bad light / special conditions, so that the prediction can be better
           # if predictions[0][1] > predictions[0][0]:# and predictions[0][1] > 0.1:
@@ -454,6 +450,9 @@ def main(argv=None):  # pylint: disable=unused-argument
         if len(handX1)>0:# or len(handX2)>0:
           # print(hand1_weights)
           # if len(handX1) > len(handX2):
+          # x = 0
+          # y = 0
+
           x = int(numpy.average(handX1, weights= hand1_weights))
           y = int(numpy.average(handY1, weights= hand1_weights))
           # x = int(numpy.mean(handX1))
@@ -475,13 +474,13 @@ def main(argv=None):  # pylint: disable=unused-argument
           y = -1
 
         # if not FLY_TEST:
-        cv2.imshow('search for hand', clone)
-        key = cv2.waitKey(1)
+        # cv2.imshow('search for hand', clone)
+        # key = cv2.waitKey(1)
 
-        if key == ord('c'):
-          return (None, None)
-        else:
-          return x, y
+        # if key == ord('c'):
+        #   return (None, None)
+        # else:
+        return x, y, clone
        
 
 
@@ -495,6 +494,9 @@ def main(argv=None):  # pylint: disable=unused-argument
         video_capture = cv2.VideoCapture(0)
         # video_capture = cv2.VideoCapture('video/IMG_4057.MOV.mov')
         # video_capture = cv2.VideoCapture('video/Untitled_1.mov')
+        # fourcc = cv2.cv.CV_FOURCC(*'DIVX')
+        # out = cv2.VideoWriter('output.avi',fourcc, 20.0, (640,480))
+        # out = cv2.VideoWriter('output.avi', -1, 20.0, (640,480))
       # video_capture.set(5, 15)
       # video_capture.set(3, 320)
       # video_capture.set(4, 180)
@@ -525,11 +527,17 @@ def main(argv=None):  # pylint: disable=unused-argument
 
         # start = time.time()
         if WEBCAM_MULT > 1: frame = cv2.resize(frame, (128 * WEBCAM_MULT, 72 * WEBCAM_MULT))
-        x, y = detect_hand_in_image(frame)
+        # x, y, frame = detect_hand_in_image(frame, WEBCAM_MULT + 2)
+        x, y, frame = detect_hand_in_image(frame, WEBCAM_MULT)
+        # x, y, frame = detect_hand_in_image(frame, WEBCAM_MULT + 1)
         # end = time.time()
         # print (end - start)
+        cv2.imshow('search for hand', frame)
+        # out.write(frame)
+        key = cv2.waitKey(1)
 
-        if (x, y) == (None, None):
+        # if (x, y) == (None, None):
+        if key == ord('c'):
           print('stopping')
           running = False
 
