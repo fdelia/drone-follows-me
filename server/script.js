@@ -5,35 +5,14 @@ send in /set/?... request
 
 */
 $(function() {
-	// console.log(url('?'));
-	// var imageName = url('?').imageName;
-	// var imagePath = '../records/' + imageName;
 	var currentImage = '';
-	var newImages = url('?').newImages.split(',');
-	console.log(newImages);
-	setImage(newImages.shift());
-	
-	// preload images
-	var imgArray = []
-	for (var i=0; i<newImages.length; i++){
-		imgArray[i] = new Image();
-		var imageName = newImages[i];
-		imgArray[i].src = '../records/' + imageName;
-	}
-	console.log('preloaded images')
+
+	getAndLoadImages();
 
 
 	$('#image').click(function(e) {
-		console.log(e.pageX + ' ' + e.pageY);
-		// window.location.href = '/set/?imageName=' + imageName + '&x=' + e.pageX + '&y=' + e.pageY;
-
-		// if (newImages.length > 0) {
-		// save data to db
-		//window.location.href = '/set/?hasImages=true&imageName=' + currentImage + '&x=' + e.pageX + '&y=' + e.pageY;	
+		// console.log(e.pageX + ' ' + e.pageY);
 		saveImageData(currentImage, e.pageX, e.pageY);
-		if (newImages.length > 0) setImage(newImages.shift());
-		// } else //window.location.href = '/set/?imageName=' + currentImage + '&x=' + e.pageX + '&y=' + e.pageY;
-		// saveImageData(currentImage, e.pageX, e.pageY);
 	});
 
 	function setImage(imageName) {
@@ -44,12 +23,39 @@ $(function() {
 	}
 
 	function saveImageData(imageName, x, y) {
-		console.log('save '+imageName + ' '+x +'/'+y);
-		// $.get('/set/?')
-		if (newImages.length > 0)
-			window.location.href = '/set/?hasImages=true&imageName=' + imageName + '&x=' + x + '&y=' + y;
-		else
-			window.location.href = '/set/?imageName=' + imageName + '&x=' + x + '&y=' + y;
+		// console.log('save ' + imageName + ' ' + x + '/' + y);
+		$.get('/saveImageCoords/', {
+			imageName: imageName,
+			x: x,
+			y: y
+		}).done((res) => {
+			console.log('saved ' + imageName);
+			if (res) $('#imageCounter').text(res);
+		});
+
+		if (newImages.length > 0) 	setImage(newImages.shift());
+		else 						getAndLoadImages();
+		
+	}
+
+	function getAndLoadImages() {
+		$.get('/getImageNames/', {
+			number: 20
+		}).done((data) => {
+			console.log('loaded image names, got ' + parseInt(data.length) + ' images');
+			// console.log(data);
+			newImages = data;
+			setImage(newImages.shift());
+
+			// preload images
+			var imgArray = []
+			for (var i = 0; i < newImages.length; i++) {
+				imgArray[i] = new Image();
+				var imageName = newImages[i];
+				imgArray[i].src = '../records/' + imageName;
+			}
+			console.log('preloaded images')
+		});
 	}
 
 	// just for information
@@ -62,7 +68,7 @@ $(function() {
 		if (e.which === 32) {
 			// window.location.href = '/set/?imageName=' + currentImage + '&x=-1&y=-1';
 			saveImageData(currentImage, -1, -1);
-			if (newImages.length > 0) setImage(newImages.shift());
+			// if (newImages.length > 0) setImage(newImages.shift());
 		}
 		// N - next
 		if (e.which === 78) {

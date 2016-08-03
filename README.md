@@ -25,6 +25,22 @@ node/npm for recording and labeling images (use brew/apt)
 
 The scripts themselves don't require any installation.
 
+## How to record images
+...
+
+## How to label images
+
+Make sure you followed the instructions in the previous paragraph.
+
+```
+node server.js
+```
+Now in your browser go to [http://localhost:3000/server/](http://localhost:3000/server/)
+
+
+## How to train and use the neural network
+...
+
 ## Todo
 
 * Tidy up the image database for better recognition
