@@ -45,6 +45,7 @@ $(function() {
 
 	function saveImageData(imageName, x, y) {
 		console.log('save '+imageName + ' '+x +'/'+y);
+		// $.get('/set/?')
 		if (newImages.length > 0)
 			window.location.href = '/set/?hasImages=true&imageName=' + imageName + '&x=' + x + '&y=' + y;
 		else

@@ -2,6 +2,7 @@ node_modules/
 records/
 records\ old/
 records_crop/
+records\ org/
 alt/records\ copy
 alt/records\ save
 saves/
@@ -10,6 +11,4 @@ video/
 **/*.png
 **/*.jpg
 data_dir/
-*.ckpt
-*.meta
 test.py

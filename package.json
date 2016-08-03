@@ -20,9 +20,9 @@
   "dependencies": {
     "convnetjs": "^0.3.0",
     "gm": "^1.22.0",
+    "image-size": "^0.5.0",
     "opencv": "^5.0.0",
     "png-js": "^0.1.1",
-    "progress": "^1.1.8",
-    "save-pixels": "^2.3.3"
+    "progress": "^1.1.8"
   }
 }

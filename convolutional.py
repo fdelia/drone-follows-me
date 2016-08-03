@@ -176,7 +176,6 @@ def get_images_and_labels(max_num_images):
 
   return images, labels
 
-
 def sliding_window(image, stepSize, windowSize):
   # slide a window across the image
   for y in xrange(0, image.shape[0] - windowSize[1], stepSize):
@@ -410,7 +409,6 @@ def main(argv=None):  # pylint: disable=unused-argument
       #   pred_spec = sess.run(eval_prediction, feed_dict={eval_data: [data]})
       #   print(pred_spec.argmax(axis=1))
 
-
       def detect_hand_in_image(image, mult):
         (winW, winH) = (IMAGE_SIZE * mult, IMAGE_SIZE * mult)
 
@@ -419,7 +417,7 @@ def main(argv=None):  # pylint: disable=unused-argument
         # handX2 = []; handY2 = []; posPreds2 = []
 
         # use step size 9 for drone
-        for (x, y, window) in sliding_window(image, stepSize=10 * mult, windowSize=(winW, winH)):
+        for (x, y, window) in sliding_window(image, stepSize=9 * mult, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
        

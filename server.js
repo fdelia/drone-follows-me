@@ -1,7 +1,6 @@
 const DB_NAME = 'database.csv';
 
-
-
+var sizeOf = require('image-size');
 var fs = require('fs');
 var express = require('express');
 var app = express();
@@ -27,16 +26,9 @@ app.get('/set/', function(req, res) {
 	});
 
 	// remove images which are in DB
-	var imagesNotInDB = imagesInRecord.filter(notInDB);
+	var imagesNotInDB = imagesInRecord.filter(notInDB).filter(existsAndCorrectShape);
 
 	console.log('images left: ' + imagesNotInDB.length)
-
-	// var newImage = imagesNotInDB[Math.floor(Math.random() * imagesNotInDB.length)];
-
-	// var newImage = imagesNotInDB[0];
-	// // if save is too slow, don't use the same image again
-	// if (newImage == req.query.imageName) newImage = imagesNotInDB[1];
-	// res.redirect('/server/index.html?imageName=' + newImage + '&newImages='+newImages.join(','));
 
 	if (!req.query.hasImages) {
 		// load new images
@@ -49,6 +41,14 @@ app.get('/set/', function(req, res) {
 	}
 
 
+	function existsAndCorrectShape(name){
+		var dim = sizeOf("./records/" + name);
+		var dimCorrect = (dim.width == 640 && dim.height == 360);
+
+		if (! dimCorrect) console.log('wrong dimensions: ' + name);
+
+		return dimCorrect;
+	}
 
 	function notInDB(name) {
 		return imagesInDB.indexOf(name) == -1;
