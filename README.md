@@ -28,6 +28,11 @@ The scripts themselves don't require any installation.
 ## How to record images
 ...
 
+Resize a lot images to 128 pixels width (width:height ratio stays the same):
+```
+sips -Z 128 img_116.7.3_10.5*
+```
+
 ## How to label images
 
 Make sure you followed the instructions in the previous paragraph.
