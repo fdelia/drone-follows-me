@@ -25,15 +25,16 @@ node/npm for recording and labeling images (use brew/apt)
 
 The scripts themselves don't require any installation.
 
-## How to record images
+## Record images
 ...
 
 Resize a lot images to 128 pixels width (width:height ratio stays the same):
 ```
 sips -Z 128 img_116.7.3_10.5*
 ```
+...
 
-## How to label images
+## Label the images
 
 Make sure you followed the instructions in the previous paragraph.
 
@@ -43,12 +44,22 @@ node server.js
 Now in your browser go to [http://localhost:3000/server/](http://localhost:3000/server/)
 
 
-## How to train and use the neural network
+## Train and use the neural network
 ...
+
+
+## Fly drone
+...
+
+
+## Improve the image database
+With `compare_images.py`... theory behind it (papers)...
+
 
 ## Todo
 
 * Tidy up the image database for better recognition
+* Avoid too similar images before cropping (saves the use of `compare_images.py`)
 * Maybe switch to ROS because of the lag and all the features 
 * Get rid of drone cam to pc lag
 * Better recognition of hand on the bottom of the cam (not the whole hand showing, when the drone should decline)

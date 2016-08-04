@@ -410,34 +410,34 @@ def main(argv=None):  # pylint: disable=unused-argument
       #   print(pred_spec.argmax(axis=1))
 
       def detect_hand_in_image(image, mult):
-        (winW, winH) = (IMAGE_SIZE * mult, IMAGE_SIZE * mult)
+        (winW, winH) = (IMAGE_SIZE, IMAGE_SIZE)
 
         clone = image.copy()
+        if mult > 1: image = cv2.resize(image, (128, 72))
+
         handX1 = []; handY1 = []; posPreds1 = []; hand1_weights= []
         # handX2 = []; handY2 = []; posPreds2 = []
 
         # use step size 9 for drone
-        for (x, y, window) in sliding_window(image, stepSize=9 * mult, windowSize=(winW, winH)):
+        for (x, y, window) in sliding_window(image, stepSize=9, windowSize=(winW, winH)):
           if window.shape[0] != winH or window.shape[1] != winW:
             continue
        
-          if mult > 1: window = cv2.resize(window, (IMAGE_SIZE, IMAGE_SIZE)) # (40, 40) 
-
           data = numpy.asarray(window, numpy.float32)#.reshape(IMAGE_SIZE, IMAGE_SIZE, 3)
           data = (data - (PIXEL_DEPTH / 2.0)) / PIXEL_DEPTH
-          # data = data.reshape(IMAGE_SIZE, IMAGE_SIZE, 3)
 
           predictions = sess.run(eval_prediction, feed_dict={eval_data: [data]})
-          # predictions = numpy.asarray([[1 , 0]])
 
           # TODO: use more data in bad light / special conditions, so that the prediction can be better
-          # if predictions[0][1] > predictions[0][0]:# and predictions[0][1] > 0.1:
           if predictions[0].argmax(axis=0) == 1 and predictions[0][1] > 0.9:
-            handX1.append(x )
-            handY1.append(y )
+            x *= WEBCAM_MULT
+            y *= WEBCAM_MULT
+
+            handX1.append(x)
+            handY1.append(y)
             # hand1_weights.append(math.pow(predictions[0][1], 12))
             hand1_weights.append(predictions[0][1])
-            cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 100, 100), 1)
+            cv2.rectangle(clone, (x, y), (x + winW * WEBCAM_MULT, y + winH * WEBCAM_MULT), (0, 100, 100), 1)
 
           # if predictions[0].argmax(axis=0) == 2 and predictions[0][2] > 0.6:
           #   handX2.append(x )
@@ -462,11 +462,11 @@ def main(argv=None):  # pylint: disable=unused-argument
           #   color = (255, 0, 255)
 
           # based on Person of Interest
-          cv2.rectangle(clone, (x, y), (x + winW, y + winH), color, 1)
-          cv2.line(clone, (int(x + winW/2), y), (int(x + winW/2), y + 3*WEBCAM_MULT), color, 1)
-          cv2.line(clone, (int(x + winW/2), y + winH), (int(x + winW/2), y + winH - 3*WEBCAM_MULT), color, 1)
-          cv2.line(clone, (x, int(y + winH/2)), (x + 3*WEBCAM_MULT, int(y + winH/2)), color, 1)
-          cv2.line(clone, (x + winW, int(y + winH/2)), (x + winW - 3*WEBCAM_MULT, int(y + winH/2)), color, 1)
+          cv2.rectangle(clone, (x, y), (x + winW*WEBCAM_MULT, y + winH*WEBCAM_MULT), color, 1)
+          cv2.line(clone, (int(x + winW/2*WEBCAM_MULT), y), (int(x + winW/2*WEBCAM_MULT), y + 3*WEBCAM_MULT), color, 1)
+          cv2.line(clone, (int(x + winW/2*WEBCAM_MULT), y + winH*WEBCAM_MULT), (int(x + winW/2*WEBCAM_MULT), y + winH*WEBCAM_MULT - 3*WEBCAM_MULT), color, 1)
+          cv2.line(clone, (x, int(y + winH/2*WEBCAM_MULT)), (x + 3*WEBCAM_MULT, int(y + winH/2*WEBCAM_MULT)), color, 1)
+          cv2.line(clone, (x + winW*WEBCAM_MULT, int(y + winH/2*WEBCAM_MULT)), (x + winW*WEBCAM_MULT - 3*WEBCAM_MULT, int(y + winH/2*WEBCAM_MULT)), color, 1)
         else:
           x = -1
           y = -1
