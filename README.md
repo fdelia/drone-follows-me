@@ -36,7 +36,7 @@ I used the drone to record frames: Connect to AR Drone 2.0, then do:
 ```bash
 node record_images.js
 ```
-The frames are saved into `records` directory.
+The frames are saved into the `records/` directory.
 
 
 ## Label and crop the images
@@ -82,6 +82,9 @@ It should recognice your hand (only your hand!) or whatever you labeled in the t
 ## Fly drone
 ... (TODO)
 
+```bash
+python convolutional.py fly
+``
 
 ## Improve the image database
 With `compare_images.py`... theory behind it (papers)...
@@ -99,5 +102,5 @@ With `compare_images.py`... theory behind it (papers)...
 ## Bugs/problems of extern libraries
 
 * cv2.imread() only works for about 5000 images, then returns None
-* Node.Js async processes build a queue and are processed at the end of the main process, not sure if controllable
+* Node.js async processes build a queue and are processed at the end of the main process
 
