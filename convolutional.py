@@ -17,17 +17,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# import gzip
-import os
-import sys
-import time
-# import csv
-import random
-
-# from PIL import Image 
 from six.moves import urllib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
+
+import os
+import sys
+import time
+import random
 import numpy
 import cv2
 import math
@@ -391,7 +388,7 @@ def main(argv=None):  # pylint: disable=unused-argument
     ##### Run only #####
     if FLAGS.run_only:
       print ('load checkpoint')
-      saver.restore(sess, "conv_mnist_model.ckpt")
+      saver.restore(sess, "conv_model.ckpt")
 
       eval_data = tf.placeholder(tf.float32, shape=(1, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS))
       eval_prediction = tf.nn.softmax(model(eval_data))
@@ -624,7 +621,7 @@ def main(argv=None):  # pylint: disable=unused-argument
       test_error = error_rate(eval_in_batches(test_data, sess), test_labels)
       print('Test error: %.1f%%' % test_error)
 
-      save_path = saver.save(sess, "conv_mnist_model.ckpt")
+      save_path = saver.save(sess, "conv_model.ckpt")
       print("Model saved in file: %s" % save_path)
 
       if FLAGS.self_test:
