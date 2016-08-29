@@ -106,24 +106,15 @@ def get_images_and_labels(max_num_images):
       if not os.path.isfile(path):
         continue
 
-      # im_org = Image.open(path)  # .convert("L")  # Convert to greyscale
+      if label == '0_gen': label = 0
+
       im_org = cv2.imread(path)
       im = numpy.asarray(im_org, numpy.float32)
-
-      if label == '0_gen': label = 0
-      
-      # queue = tf.train.string_input_producer([filename])
-      # reader = tf.WholeFileReader()
-      # _, contents = reader.read(queue)
-      # contents = tf.read_file('records_crop/'+filename)
-      # im = tf.image.decode_jpeg(contents, channels=3)
-      # im = tf.cast(im, tf.float32)
 
       if im.shape != (IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS):
         continue
         # print('    wrong shape: '+filename)
         # print(im.shape)
-
       
       images.append(im)
       labels = numpy.append(labels, [label])
@@ -137,23 +128,25 @@ def get_images_and_labels(max_num_images):
       counter += 1        
 
       # augmentation, rotate 180
-      if label==0:
+      # if label==0:
         # M = cv2.getRotationMatrix2D((IMAGE_SIZE/2, IMAGE_SIZE/2), 180, 1.0)
         # im2 = cv2.warpAffine(im_org, M, (IMAGE_SIZE, IMAGE_SIZE))
-        im2 = cv2.flip(im_org, -1)
-        im2 = numpy.asarray(im2, numpy.float32)
-        images.append(im2)
-        labels = numpy.append(labels, [label])
-        counter += 1        
+      im2 = cv2.flip(im_org, -1)
+      im2 = numpy.asarray(im2, numpy.float32)
+      images.append(im2)
+      labels = numpy.append(labels, [label])
+      counter += 1        
 
       # augmentation, rotate 90
-      # if label==1:
-      #   im2 = im_org.rotate(90, expand=0)
-      #   im2 = numpy.asarray(im2, numpy.float32)
-      #   # images = numpy.append(images, [im2])
-      #   images.append(im2)
-      #   labels = numpy.append(labels, [label])
-      #   counter += 1                
+      if label==1:
+        M = cv2.getRotationMatrix2D((IMAGE_SIZE/2, IMAGE_SIZE/2), 90, 1.0)
+        im2 = cv2.warpAffine(im_org, M, (IMAGE_SIZE, IMAGE_SIZE))
+        # im2 = im_org.rotate(90, expand=0)
+        im2 = numpy.asarray(im2, numpy.float32)
+        # images = numpy.append(images, [im2])
+        images.append(im2)
+        labels = numpy.append(labels, [label])
+        counter += 1                
 
 
       if counter%1000 == 0:
